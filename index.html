@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>엄마랑 후쿠오카 2박 3일</title>
+<meta name="theme-color" content="#3D5A6C">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-top">
+    <div class="title-block">
+      <p class="eyebrow">2026.08.02 – 08.04</p>
+      <h1>엄마랑 후쿠오카<br>2박 3일</h1>
+    </div>
+    <div class="header-mark" aria-hidden="true"></div>
+  </div>
+  <nav class="day-tabs" id="dayTabs">
+    <button class="day-tab active" data-day="1">
+      <span class="day-num">DAY 1</span><span class="day-date">8.2 일</span>
+    </button>
+    <button class="day-tab" data-day="2">
+      <span class="day-num">DAY 2</span><span class="day-date">8.3 월</span>
+    </button>
+    <button class="day-tab" data-day="3">
+      <span class="day-num">DAY 3</span><span class="day-date">8.4 화</span>
+    </button>
+  </nav>
+</header>
+
+<main id="mainViews">
+
+  <section id="view-timeline" class="view active">
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <section id="view-map" class="view">
+    <div class="map-panel">
+      <div class="map-embed-wrap" id="mapEmbedWrap">
+        <div class="map-empty" id="mapEmpty">
+          <p>구글 마이맵 공유 링크를 등록하면<br>여기에 전체 동선 지도가 표시돼요.</p>
+          <button class="btn-primary" id="btnSetMap">지도 링크 등록</button>
+        </div>
+        <iframe id="mapIframe" hidden loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <button class="btn-ghost small" id="btnEditMap" hidden>지도 링크 수정</button>
+    </div>
+  </section>
+
+  <section id="view-book" class="view">
+    <div class="book-panel" id="bookPanel"></div>
+  </section>
+
+  <section id="view-checklist" class="view">
+    <div class="checklist-panel">
+      <form id="checklistForm" class="checklist-add">
+        <input type="text" id="checklistInput" placeholder="예: 여권, 트래블월렛 충전, 우산" autocomplete="off">
+        <button type="submit" class="btn-primary small">추가</button>
+      </form>
+      <ul class="checklist-list" id="checklistList"></ul>
+    </div>
+  </section>
+
+</main>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-btn active" data-view="timeline">
+    <span class="nav-icon">🗓️</span><span>일정</span>
+  </button>
+  <button class="nav-btn" data-view="map">
+    <span class="nav-icon">📍</span><span>지도</span>
+  </button>
+  <button class="nav-btn" data-view="book">
+    <span class="nav-icon">🎫</span><span>예약함</span>
+  </button>
+  <button class="nav-btn" data-view="checklist">
+    <span class="nav-icon">✅</span><span>체크리스트</span>
+  </button>
+</nav>
+
+<!-- 상세 모달 -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal-sheet" id="modalSheet" role="dialog" aria-modal="true">
+    <div class="modal-tape"></div>
+    <button class="modal-close" id="modalClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <span class="modal-time" id="modalTime"></span>
+      <h2 id="modalTitle"></h2>
+      <p class="modal-subtitle" id="modalSubtitle"></p>
+    </div>
+    <div class="modal-body">
+      <a class="map-link" id="modalMapLink" target="_blank" rel="noopener">📍 구글 지도에서 위치 보기</a>
+
+      <label class="field-label" for="modalNote">메모 (이동방법 · 비용 · 시간 · 팁)</label>
+      <textarea id="modalNote" rows="4" placeholder="예: 공항→하카타역 지하철 5분, 260엔"></textarea>
+
+      <div class="attach-section">
+        <div class="attach-head">
+          <span class="field-label">첨부 (사진 · 캡처 · PDF)</span>
+          <label class="btn-ghost small attach-add">
+            + 추가
+            <input type="file" id="modalFileInput" accept="image/*,application/pdf" multiple hidden>
+          </label>
+        </div>
+        <div class="attach-grid" id="modalAttachGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 첨부파일 뷰어 팝업 -->
+<div class="viewer-backdrop" id="viewerBackdrop" hidden>
+  <button class="viewer-close" id="viewerClose" aria-label="닫기">✕</button>
+  <div class="viewer-content" id="viewerContent"></div>
+</div>
+
+<!-- 지도 링크 등록 팝업 -->
+<div class="viewer-backdrop" id="mapPromptBackdrop" hidden>
+  <div class="modal-sheet small-sheet">
+    <button class="modal-close" id="mapPromptClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>마이맵 링크 등록</h2>
+      <p class="modal-subtitle">구글 마이맵 → 공유 → "웹에 게시" 링크(embed URL)를 붙여넣어줘</p>
+    </div>
+    <div class="modal-body">
+      <textarea id="mapPromptInput" rows="3" placeholder="https://www.google.com/maps/d/embed?mid=..."></textarea>
+      <button class="btn-primary" id="mapPromptSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
