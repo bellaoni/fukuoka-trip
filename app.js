@@ -173,6 +173,11 @@
   document.getElementById("mapPromptClose").addEventListener("click", () => {
     document.getElementById("mapPromptBackdrop").hidden = true;
   });
+  document.getElementById("mapPromptBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "mapPromptBackdrop") {
+      document.getElementById("mapPromptBackdrop").hidden = true;
+    }
+  });
   document.getElementById("mapPromptSave").addEventListener("click", async () => {
     const val = document.getElementById("mapPromptInput").value.trim();
     await DB.setSetting("mapEmbedUrl", val);
