@@ -19,39 +19,34 @@
   <div class="header-top">
     <div class="title-block">
       <p class="eyebrow">2026.08.02 – 08.04</p>
-      <h1>엄마랑 후쿠오카<br>2박 3일</h1>
+      <h1>엄마랑 후쿠오카 2박 3일</h1>
     </div>
     <div class="header-mark" aria-hidden="true"></div>
   </div>
-  <nav class="day-tabs" id="dayTabs">
-    <button class="day-tab active" data-day="1">
-      <span class="day-num">DAY 1</span><span class="day-date">8.2 일</span>
-    </button>
-    <button class="day-tab" data-day="2">
-      <span class="day-num">DAY 2</span><span class="day-date">8.3 월</span>
-    </button>
-    <button class="day-tab" data-day="3">
-      <span class="day-num">DAY 3</span><span class="day-date">8.4 화</span>
-    </button>
-  </nav>
 </header>
 
 <main id="mainViews">
 
   <section id="view-timeline" class="view active">
+    <nav class="day-tabs" id="dayTabs">
+      <button class="day-tab active" data-day="1">
+        <span class="day-num">DAY 1</span><span class="day-date">8.2 일</span>
+      </button>
+      <button class="day-tab" data-day="2">
+        <span class="day-num">DAY 2</span><span class="day-date">8.3 월</span>
+      </button>
+      <button class="day-tab" data-day="3">
+        <span class="day-num">DAY 3</span><span class="day-date">8.4 화</span>
+      </button>
+    </nav>
     <div class="timeline" id="timeline"></div>
   </section>
 
   <section id="view-map" class="view">
     <div class="map-panel">
-      <div class="map-embed-wrap" id="mapEmbedWrap">
-        <div class="map-empty" id="mapEmpty">
-          <p>구글 마이맵 공유 링크를 등록하면<br>여기에 전체 동선 지도가 표시돼요.</p>
-          <button class="btn-primary" id="btnSetMap">지도 링크 등록</button>
-        </div>
-        <iframe id="mapIframe" hidden loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div class="map-embed-wrap">
+        <iframe id="mapIframe" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
-      <button class="btn-ghost small" id="btnEditMap" hidden>지도 링크 수정</button>
     </div>
   </section>
 
@@ -61,11 +56,25 @@
 
   <section id="view-checklist" class="view">
     <div class="checklist-panel">
-      <form id="checklistForm" class="checklist-add">
-        <input type="text" id="checklistInput" placeholder="예: 여권, 트래블월렛 충전, 우산" autocomplete="off">
-        <button type="submit" class="btn-primary small">추가</button>
-      </form>
-      <ul class="checklist-list" id="checklistList"></ul>
+
+      <details class="accordion" open>
+        <summary>준비물</summary>
+        <div class="accordion-body">
+          <form id="checklistForm" class="checklist-add">
+            <input type="text" id="checklistInput" placeholder="예: 여권, 트래블월렛 충전, 우산" autocomplete="off">
+            <button type="submit" class="btn-primary small">추가</button>
+          </form>
+          <ul class="checklist-list" id="checklistList"></ul>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>참고정보</summary>
+        <div class="accordion-body">
+          <ul class="ref-list" id="refList"></ul>
+        </div>
+      </details>
+
     </div>
   </section>
 
@@ -79,7 +88,7 @@
     <span class="nav-icon">📍</span><span>지도</span>
   </button>
   <button class="nav-btn" data-view="book">
-    <span class="nav-icon">🎫</span><span>예약함</span>
+    <span class="nav-icon">🎫</span><span>예약</span>
   </button>
   <button class="nav-btn" data-view="checklist">
     <span class="nav-icon">✅</span><span>체크리스트</span>
@@ -98,7 +107,6 @@
     </div>
     <div class="modal-body">
       <a class="map-link" id="modalMapLink" target="_blank" rel="noopener">📍 구글 지도에서 위치 보기</a>
-      <button class="btn-primary pdf-view-btn" id="modalPdfBtn" type="button" hidden>📄 공용 PDF 보기</button>
 
       <label class="field-label" for="modalNote">메모 (이동방법 · 비용 · 시간 · 팁)</label>
       <textarea id="modalNote" rows="4" placeholder="예: 공항→하카타역 지하철 5분, 260엔"></textarea>
@@ -122,6 +130,59 @@
 <div class="viewer-backdrop" id="viewerBackdrop" hidden>
   <button class="viewer-close" id="viewerClose" aria-label="닫기">✕</button>
   <div class="viewer-content" id="viewerContent"></div>
+</div>
+
+<!-- 공항↔하카타역 이동방법 카드 팝업 -->
+<div class="viewer-backdrop" id="transitCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet transit-card">
+    <button class="modal-close" id="transitCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>✈️ 후쿠오카 공항 → 하카타역</h2>
+    </div>
+    <div class="modal-body transit-body">
+
+      <h3>🚇 지하철 (추천)</h3>
+      <ul>
+        <li>국제선 → 무료 셔틀버스 → 국내선 이동 (약 10~15분)</li>
+        <li>후쿠오카공항역(공항선) 탑승</li>
+        <li>2정거장 후 하카타역 하차 (약 5분)</li>
+        <li><b>총 소요시간</b>: 약 20~25분</li>
+        <li><b>요금</b>: 260엔</li>
+      </ul>
+      <p class="pay-label">결제</p>
+      <ul>
+        <li>현금</li>
+        <li>IC 교통카드 (SUGOCA·ICOCA·Suica 등)</li>
+        <li>Visa 등 컨택리스 카드</li>
+      </ul>
+
+      <hr class="washi-divider">
+
+      <h3>🚌 직행버스</h3>
+      <ul>
+        <li>국제선 1층 버스 승강장 이용</li>
+        <li>하카타역(치쿠시구치) 방면 직행</li>
+        <li><b>소요시간</b>: 약 15~20분 (교통 상황에 따라 변동)</li>
+        <li><b>요금</b>: 400엔</li>
+      </ul>
+      <p class="pay-label">결제</p>
+      <ul>
+        <li>현금</li>
+        <li>IC 교통카드</li>
+        <li>Visa 등 컨택리스 카드</li>
+      </ul>
+
+      <hr class="washi-divider">
+
+      <h3>💡 추천</h3>
+      <ul>
+        <li>빠르고 시간 정확: 🚇 지하철</li>
+        <li>짐이 많거나 환승이 번거롭다면: 🚌 직행버스</li>
+      </ul>
+
+      <button class="btn-primary close-bottom" id="transitCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
 </div>
 
 <script src="db.js"></script>

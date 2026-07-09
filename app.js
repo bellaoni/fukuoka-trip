@@ -47,12 +47,13 @@
             <span class="tl-tag">${TAG_LABEL[item.tag] || ""}</span>
           </div>
           ${item.desc ? `<p class="desc">${item.desc}</p>` : ""}
+          ${item.remark ? `<p class="remark">📝 ${item.remark}</p>` : ""}
           <div class="meta-row"><span>⏰ ${item.time}</span></div>
         </button>
       </div>`;
   }
 
-  // ---------------- 예약함 ----------------
+  // ---------------- 예약 ----------------
   function renderBook() {
     const el = document.getElementById("bookPanel");
     let html = "";
@@ -61,47 +62,25 @@
       <div class="book-row"><span class="k">숙소명</span><span class="v">${TRIP.hotel}</span></div>
       <div class="book-row"><span class="k">체크인</span><span class="v">2026-08-02</span></div>
       <div class="book-row"><span class="k">체크아웃</span><span class="v">2026-08-04</span></div>
-      <button class="btn-ghost small" data-open="ref-hotel">바우처 · 메모 보기</button>
     </div>`;
 
-    TRIP.flights.forEach((f, idx) => {
+    TRIP.flights.forEach((f) => {
       html += `<div class="book-card"><h3>✈️ ${f.route}</h3>
         <div class="book-row"><span class="k">날짜</span><span class="v">${f.date}</span></div>
         <div class="book-row"><span class="k">출발</span><span class="v">${f.dep}</span></div>
         <div class="book-row"><span class="k">도착</span><span class="v">${f.arr}</span></div>
         <div class="book-row"><span class="k">편명</span><span class="v">${f.code}</span></div>
-        <button class="btn-ghost small" data-open="ref-flight-${idx}">예약확인서 · 메모 보기</button>
       </div>`;
     });
 
-    html += `<div class="book-card"><h3>📎 참고 정보</h3>`;
-    REFERENCE_ITEMS.forEach(r => {
-      html += `<div class="book-row"><span class="k">${r.title}</span>
-        <button class="btn-ghost small" data-open="${r.id}">보기</button></div>`;
-    });
-    html += `</div>`;
-
     el.innerHTML = html;
-    el.querySelectorAll("[data-open]").forEach(btn => {
-      btn.addEventListener("click", () => openModal(btn.dataset.open));
-    });
   }
 
-  // 예약함 전용 가상 item 생성 (ITEMS에 없는 id 처리)
+  // 상세 모달 대상 가상 item 생성 (ITEMS에 없는 id 처리 - 현재는 사용 안 하지만 향후 대비)
   function resolveItem(id) {
     const found = ITEMS.find(i => i.id === id);
     if (found) return found;
-    if (id === "ref-hotel") {
-      return { id, title: TRIP.hotel, desc: "숙소 바우처, 체크인 정보 등을 메모/첨부해두세요.", mapQuery: TRIP.hotel, time: "" };
-    }
-    const flightIdx = id.startsWith("ref-flight-") ? Number(id.split("-")[2]) : -1;
-    if (flightIdx >= 0 && TRIP.flights[flightIdx]) {
-      const f = TRIP.flights[flightIdx];
-      return { id, title: f.route + " · " + f.code, desc: `${f.date} / ${f.dep} → ${f.arr}`, mapQuery: "", time: "" };
-    }
-    const ref = REFERENCE_ITEMS.find(r => r.id === id);
-    if (ref) return { id, title: ref.title, desc: "공용 PDF와 개인 메모를 함께 확인할 수 있어요.", mapQuery: ref.mapQuery, time: "", pdf: ref.pdf };
-    return { id, title: "메모", desc: "", mapQuery: "", time: "" };
+    return { id, title: "메모", desc: "", mapQuery: "", time: "", remark: "" };
   }
 
   // ---------------- 체크리스트 ----------------
@@ -130,6 +109,17 @@
         renderChecklist();
       });
     });
+
+    const refEl = document.getElementById("refList");
+    if (refEl) {
+      refEl.innerHTML = REFERENCE_ITEMS.map(r => `
+        <li><span>${r.title}</span>
+          <button class="btn-ghost small" data-ref="${r.id}">보기</button>
+        </li>`).join("");
+      refEl.querySelectorAll("[data-ref]").forEach(btn => {
+        btn.addEventListener("click", () => openReferenceCard(btn.dataset.ref));
+      });
+    }
   }
 
   document.getElementById("checklistForm").addEventListener("submit", async (e) => {
@@ -144,38 +134,28 @@
     renderChecklist();
   });
 
-  // ---------------- 지도 ----------------
-  async function renderMap() {
-    const url = await DB.getSetting("mapEmbedUrl");
-    const iframe = document.getElementById("mapIframe");
-    const empty = document.getElementById("mapEmpty");
-    const editBtn = document.getElementById("btnEditMap");
-    if (url) {
-      iframe.src = url;
-      iframe.hidden = false;
-      empty.hidden = true;
-      editBtn.hidden = false;
-    } else {
-      iframe.hidden = true;
-      empty.hidden = false;
-      editBtn.hidden = true;
+  function openReferenceCard(id) {
+    if (id === "ref-airport-station") {
+      document.getElementById("transitCardBackdrop").hidden = false;
     }
   }
+  document.getElementById("transitCardClose").addEventListener("click", () => {
+    document.getElementById("transitCardBackdrop").hidden = true;
+  });
+  document.getElementById("transitCardCloseBottom").addEventListener("click", () => {
+    document.getElementById("transitCardBackdrop").hidden = true;
+  });
+  document.getElementById("transitCardBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "transitCardBackdrop") {
+      document.getElementById("transitCardBackdrop").hidden = true;
+    }
+  });
 
-  document.getElementById("btnSetMap").addEventListener("click", async () => {
-    const current = (await DB.getSetting("mapEmbedUrl")) || "";
-    const val = window.prompt("구글 마이맵 → 공유 → \"웹에 게시\" embed 링크를 붙여넣어줘", current);
-    if (val === null) return;
-    await DB.setSetting("mapEmbedUrl", val.trim());
-    renderMap();
-  });
-  document.getElementById("btnEditMap").addEventListener("click", async () => {
-    const current = (await DB.getSetting("mapEmbedUrl")) || "";
-    const val = window.prompt("구글 마이맵 embed 링크 수정", current);
-    if (val === null) return;
-    await DB.setSetting("mapEmbedUrl", val.trim());
-    renderMap();
-  });
+  // ---------------- 지도 (모두에게 동일 - data.js의 TRIP.mapEmbedUrl 고정 사용) ----------------
+  function renderMap() {
+    const iframe = document.getElementById("mapIframe");
+    if (TRIP.mapEmbedUrl) iframe.src = TRIP.mapEmbedUrl;
+  }
 
   // ---------------- 상세 모달 ----------------
   async function openModal(id) {
@@ -185,7 +165,8 @@
     document.getElementById("modalTime").textContent = item.time || "메모";
     document.getElementById("modalTime").style.display = item.time ? "" : "none";
     document.getElementById("modalTitle").textContent = item.title;
-    document.getElementById("modalSubtitle").textContent = item.desc || "";
+    document.getElementById("modalSubtitle").textContent =
+      [item.desc, item.remark].filter(Boolean).join(" · ");
 
     const mapLink = document.getElementById("modalMapLink");
     if (item.mapQuery) {
@@ -193,15 +174,6 @@
       mapLink.style.display = "";
     } else {
       mapLink.style.display = "none";
-    }
-
-    const pdfBtn = document.getElementById("modalPdfBtn");
-    if (item.pdf) {
-      pdfBtn.hidden = false;
-      pdfBtn.onclick = () => openBundledPdf(item.pdf);
-    } else {
-      pdfBtn.hidden = true;
-      pdfBtn.onclick = null;
     }
 
     const note = await DB.getNote(item.id);
@@ -269,24 +241,6 @@
     e.target.value = "";
     renderAttachments(currentItem.id);
   });
-
-  async function openBundledPdf(path) {
-    const content = document.getElementById("viewerContent");
-    content.innerHTML = `<p style="color:#fff">불러오는 중...</p>`;
-    document.getElementById("viewerBackdrop").hidden = false;
-    try {
-      const res = await fetch(path, { method: "GET", cache: "no-store" });
-      if (res.ok) {
-        content.innerHTML = `<iframe src="${path}"></iframe>`;
-      } else {
-        content.innerHTML = `<p style="color:#fff;max-width:80vw;text-align:center;line-height:1.6">
-          아직 <b>${path}</b> 파일이 저장소에 없어요.<br>
-          GitHub에 이 이름 그대로 PDF를 올려주면 여기서 바로 보여요.</p>`;
-      }
-    } catch (err) {
-      content.innerHTML = `<p style="color:#fff">파일을 불러오지 못했어요. 오프라인 상태일 수 있어요.</p>`;
-    }
-  }
 
   // ---------------- 첨부파일 뷰어 팝업 ----------------
   function openViewer(att, url) {
