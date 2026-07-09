@@ -126,9 +126,10 @@ const ITEMS = [
     mapQuery: "후쿠오카 공항 국제선터미널" },
 ];
 
-// 일정에 없는 항목이지만 자주 필요한 참고정보 (예약함 탭에 노출, 사용자가 직접 메모/첨부 채우는 용도)
+// 일정에 없는 항목이지만 자주 필요한 참고정보 (예약함 탭에 노출)
+// pdf: 저장소 루트에 이 파일명으로 PDF를 올려두면 "보기" 버튼에서 바로 팝업으로 열림 (기기 상관없이 모두에게 동일하게 보임)
 const REFERENCE_ITEMS = [
-  { id: "ref-airport-station", title: "공항 ↔ 하카타역 이동방법", mapQuery: "후쿠오카 공항 국제선터미널" },
-  { id: "ref-transit-card", title: "교통카드 (스이카/트래블월렛 등)", mapQuery: "" },
-  { id: "ref-currency", title: "환전 / 예산 메모", mapQuery: "" },
+  { id: "ref-airport-station", title: "공항 ↔ 하카타역 이동방법", mapQuery: "후쿠오카 공항 국제선터미널", pdf: "ref-airport-station.pdf" },
+  { id: "ref-transit-card", title: "교통카드 (스이카/트래블월렛 등)", mapQuery: "", pdf: "ref-transit-card.pdf" },
+  { id: "ref-currency", title: "환전 / 예산 메모", mapQuery: "", pdf: "ref-currency.pdf" },
 ];

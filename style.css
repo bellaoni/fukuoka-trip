@@ -496,6 +496,12 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   margin-top: 26px;
   text-align: center;
 }
+.pdf-view-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: var(--pink-deep);
+}
 
 .viewer-content { max-width: 92vw; max-height: 82vh; }
 .viewer-content img { max-width: 92vw; max-height: 82vh; border-radius: 10px; display: block; }

@@ -100,7 +100,7 @@
       return { id, title: f.route + " · " + f.code, desc: `${f.date} / ${f.dep} → ${f.arr}`, mapQuery: "", time: "" };
     }
     const ref = REFERENCE_ITEMS.find(r => r.id === id);
-    if (ref) return { id, title: ref.title, desc: "메모와 캡처 이미지를 자유롭게 남겨두세요.", mapQuery: ref.mapQuery, time: "" };
+    if (ref) return { id, title: ref.title, desc: "공용 PDF와 개인 메모를 함께 확인할 수 있어요.", mapQuery: ref.mapQuery, time: "", pdf: ref.pdf };
     return { id, title: "메모", desc: "", mapQuery: "", time: "" };
   }
 
@@ -195,6 +195,15 @@
       mapLink.style.display = "none";
     }
 
+    const pdfBtn = document.getElementById("modalPdfBtn");
+    if (item.pdf) {
+      pdfBtn.hidden = false;
+      pdfBtn.onclick = () => openBundledPdf(item.pdf);
+    } else {
+      pdfBtn.hidden = true;
+      pdfBtn.onclick = null;
+    }
+
     const note = await DB.getNote(item.id);
     document.getElementById("modalNote").value = note;
 
@@ -208,6 +217,7 @@
     currentItem = null;
   }
   document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("modalCloseBottom").addEventListener("click", closeModal);
   document.getElementById("modalBackdrop").addEventListener("click", (e) => {
     if (e.target.id === "modalBackdrop") closeModal();
   });
@@ -259,6 +269,24 @@
     e.target.value = "";
     renderAttachments(currentItem.id);
   });
+
+  async function openBundledPdf(path) {
+    const content = document.getElementById("viewerContent");
+    content.innerHTML = `<p style="color:#fff">불러오는 중...</p>`;
+    document.getElementById("viewerBackdrop").hidden = false;
+    try {
+      const res = await fetch(path, { method: "GET", cache: "no-store" });
+      if (res.ok) {
+        content.innerHTML = `<iframe src="${path}"></iframe>`;
+      } else {
+        content.innerHTML = `<p style="color:#fff;max-width:80vw;text-align:center;line-height:1.6">
+          아직 <b>${path}</b> 파일이 저장소에 없어요.<br>
+          GitHub에 이 이름 그대로 PDF를 올려주면 여기서 바로 보여요.</p>`;
+      }
+    } catch (err) {
+      content.innerHTML = `<p style="color:#fff">파일을 불러오지 못했어요. 오프라인 상태일 수 있어요.</p>`;
+    }
+  }
 
   // ---------------- 첨부파일 뷰어 팝업 ----------------
   function openViewer(att, url) {
