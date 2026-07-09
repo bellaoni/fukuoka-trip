@@ -1,3 +1,5 @@
+[hidden] { display: none !important; }
+
 :root {
   --paper: #F8F1E7;
   --paper-raised: #FFFDF9;
@@ -369,11 +371,10 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 /* ---------- Modal ---------- */
 .modal-backdrop, .viewer-backdrop {
   position: fixed; inset: 0;
-  background: rgba(46,42,38,0.42);
+  background: rgba(46,42,38,0.55);
   display: flex;
   align-items: flex-end;
   z-index: 100;
-  backdrop-filter: blur(2px);
 }
 .viewer-backdrop { align-items: center; justify-content: center; flex-direction: column; }
 .modal-sheet {
@@ -402,14 +403,14 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 }
 .modal-close, .viewer-close {
   position: absolute;
-  top: 14px; right: 14px;
-  background: rgba(46,42,38,0.06);
+  top: 10px; right: 10px;
+  background: rgba(46,42,38,0.08);
   border: none;
-  width: 32px; height: 32px;
+  width: 44px; height: 44px;
   border-radius: 50%;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
-  z-index: 2;
+  z-index: 10;
 }
 .viewer-close { top: 20px; right: 20px; background: rgba(255,255,255,0.15); color: #fff; }
 .modal-header { padding-right: 30px; }
@@ -488,6 +489,12 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   border: none;
   font-size: 11px;
   line-height: 1;
+}
+.close-bottom {
+  display: block;
+  width: 100%;
+  margin-top: 26px;
+  text-align: center;
 }
 
 .viewer-content { max-width: 92vw; max-height: 82vh; }
