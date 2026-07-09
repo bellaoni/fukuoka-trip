@@ -162,26 +162,18 @@
     }
   }
 
-  function openMapPrompt(prefill) {
-    document.getElementById("mapPromptInput").value = prefill || "";
-    document.getElementById("mapPromptBackdrop").hidden = false;
-  }
-  document.getElementById("btnSetMap").addEventListener("click", () => openMapPrompt(""));
+  document.getElementById("btnSetMap").addEventListener("click", async () => {
+    const current = (await DB.getSetting("mapEmbedUrl")) || "";
+    const val = window.prompt("구글 마이맵 → 공유 → \"웹에 게시\" embed 링크를 붙여넣어줘", current);
+    if (val === null) return;
+    await DB.setSetting("mapEmbedUrl", val.trim());
+    renderMap();
+  });
   document.getElementById("btnEditMap").addEventListener("click", async () => {
-    openMapPrompt(await DB.getSetting("mapEmbedUrl"));
-  });
-  document.getElementById("mapPromptClose").addEventListener("click", () => {
-    document.getElementById("mapPromptBackdrop").hidden = true;
-  });
-  document.getElementById("mapPromptBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "mapPromptBackdrop") {
-      document.getElementById("mapPromptBackdrop").hidden = true;
-    }
-  });
-  document.getElementById("mapPromptSave").addEventListener("click", async () => {
-    const val = document.getElementById("mapPromptInput").value.trim();
-    await DB.setSetting("mapEmbedUrl", val);
-    document.getElementById("mapPromptBackdrop").hidden = true;
+    const current = (await DB.getSetting("mapEmbedUrl")) || "";
+    const val = window.prompt("구글 마이맵 embed 링크 수정", current);
+    if (val === null) return;
+    await DB.setSetting("mapEmbedUrl", val.trim());
     renderMap();
   });
 
