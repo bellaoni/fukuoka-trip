@@ -126,6 +126,40 @@ const DB = (() => {
         r.onsuccess = () => res();
         r.onerror = () => rej(r.error);
       });
+    },
+    // ---- 백업/복원용 ----
+    async getAllNotes() {
+      const store = await tx("notes", "readonly");
+      return new Promise((res, rej) => {
+        const result = {};
+        const cursorReq = store.openCursor();
+        cursorReq.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            result[cursor.key] = cursor.value;
+            cursor.continue();
+          } else {
+            res(result);
+          }
+        };
+        cursorReq.onerror = () => rej(cursorReq.error);
+      });
+    },
+    async getAllAttachments() {
+      const store = await tx("attachments", "readonly");
+      return new Promise((res, rej) => {
+        const r = store.getAll();
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async putAttachmentRaw(record) {
+      const store = await tx("attachments", "readwrite");
+      return new Promise((res, rej) => {
+        const r = store.put(record);
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
     }
   };
 })();

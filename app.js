@@ -5,7 +5,13 @@
 
   let currentDay = 1;
   let currentItem = null; // 현재 모달에 열려있는 item
-  const objectUrls = []; // 정리용
+  const objectUrls = []; // 생성된 blob object URL 추적 (해제용)
+
+  function revokeObjectUrls() {
+    while (objectUrls.length) {
+      URL.revokeObjectURL(objectUrls.pop());
+    }
+  }
 
   // ---------------- 뷰 전환 ----------------
   function switchView(view) {
@@ -76,7 +82,7 @@
     el.innerHTML = html;
   }
 
-  // 상세 모달 대상 가상 item 생성 (ITEMS에 없는 id 처리 - 현재는 사용 안 하지만 향후 대비)
+  // ITEMS에 없는 id로 모달을 열 때(예: 향후 자유메모 항목) 빈 값으로 대체
   function resolveItem(id) {
     const found = ITEMS.find(i => i.id === id);
     if (found) return found;
@@ -208,6 +214,7 @@
     const grid = document.getElementById("modalAttachGrid");
     const attachments = await DB.getAttachments(itemId);
     grid.innerHTML = "";
+    revokeObjectUrls();
     attachments.forEach(att => {
       const url = URL.createObjectURL(att.blob);
       objectUrls.push(url);
@@ -269,6 +276,122 @@
   document.getElementById("bottomNav").addEventListener("click", (e) => {
     const btn = e.target.closest(".nav-btn");
     if (btn) switchView(btn.dataset.view);
+  });
+
+  // ---------------- 다크모드 ----------------
+  const THEME_KEY = "fukuoka-trip-theme";
+  function applyTheme(isDark) {
+    if (isDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    try { localStorage.setItem(THEME_KEY, isDark ? "dark" : "light"); } catch (e) {}
+    const meta = document.getElementById("themeColorMeta");
+    if (meta) meta.setAttribute("content", isDark ? "#1E1B18" : "#3D5A6C");
+  }
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  darkModeToggle.checked = document.documentElement.getAttribute("data-theme") === "dark";
+  applyTheme(darkModeToggle.checked); // theme-color 메타를 현재 상태와 동기화
+  darkModeToggle.addEventListener("change", (e) => applyTheme(e.target.checked));
+
+  // ---------------- 데이터 백업 / 복원 ----------------
+  function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function dataURLToBlob(dataUrl) {
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  }
+
+  function showBackupStatus(msg) {
+    const el = document.getElementById("backupStatus");
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  document.getElementById("exportBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("exportBtn");
+    btn.disabled = true;
+    try {
+      const [notes, checklist, rawAttachments] = await Promise.all([
+        DB.getAllNotes(),
+        DB.getChecklist(),
+        DB.getAllAttachments()
+      ]);
+      const attachments = await Promise.all(rawAttachments.map(async (a) => ({
+        id: a.id,
+        itemId: a.itemId,
+        name: a.name,
+        type: a.type,
+        createdAt: a.createdAt,
+        dataUrl: await blobToDataURL(a.blob)
+      })));
+      const payload = {
+        app: "fukuoka-trip-pwa",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        notes, checklist, attachments
+      };
+      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `fukuoka-trip-backup-${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showBackupStatus(`✅ 내보내기 완료 (${new Date().toLocaleString("ko-KR")})`);
+    } catch (err) {
+      showBackupStatus("⚠️ 내보내기에 실패했어요. 다시 시도해 주세요.");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("importFileInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!confirm("백업 파일을 불러오면 현재 저장된 메모·사진·체크리스트 위에 덮어써요. 계속할까요?")) return;
+
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      if (!payload || payload.app !== "fukuoka-trip-pwa") {
+        showBackupStatus("⚠️ 이 앱의 백업 파일이 아니에요.");
+        return;
+      }
+
+      for (const [itemId, noteText] of Object.entries(payload.notes || {})) {
+        await DB.setNote(itemId, noteText);
+      }
+      if (Array.isArray(payload.checklist)) {
+        await DB.setChecklist(payload.checklist);
+      }
+      for (const att of payload.attachments || []) {
+        const blob = await dataURLToBlob(att.dataUrl);
+        await DB.putAttachmentRaw({
+          id: att.id, itemId: att.itemId, name: att.name,
+          type: att.type, blob, createdAt: att.createdAt
+        });
+      }
+
+      showBackupStatus(`✅ 가져오기 완료 (${new Date().toLocaleString("ko-KR")})`);
+      renderChecklist();
+      if (currentItem) await renderAttachments(currentItem.id);
+    } catch (err) {
+      showBackupStatus("⚠️ 가져오기에 실패했어요. 올바른 백업 파일인지 확인해 주세요.");
+    }
   });
 
   // ---------------- 초기화 ----------------

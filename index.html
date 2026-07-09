@@ -4,7 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>엄마랑 후쿠오카 2박 3일</title>
-<meta name="theme-color" content="#3D5A6C">
+<meta name="theme-color" id="themeColorMeta" content="#3D5A6C">
+<script>
+(function () {
+  try {
+    if (localStorage.getItem("fukuoka-trip-theme") === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  } catch (e) {}
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
@@ -72,6 +81,34 @@
         <summary>참고정보</summary>
         <div class="accordion-body">
           <ul class="ref-list" id="refList"></ul>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>설정</summary>
+        <div class="accordion-body">
+          <div class="setting-row">
+            <span>다크 모드</span>
+            <label class="switch">
+              <input type="checkbox" id="darkModeToggle">
+              <span class="switch-track" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>데이터 백업</summary>
+        <div class="accordion-body">
+          <p class="hint-text">사진 · 메모 · 체크리스트를 파일 하나로 저장하거나 불러올 수 있어요. 기기를 바꾸거나 앱을 지우기 전에 내보내기 해두는 걸 추천해요.</p>
+          <div class="backup-actions">
+            <button class="btn-primary small" id="exportBtn" type="button">내보내기</button>
+            <label class="btn-ghost small file-btn" for="importFileInput">
+              가져오기
+              <input type="file" id="importFileInput" accept="application/json" hidden>
+            </label>
+          </div>
+          <p class="hint-text" id="backupStatus" hidden></p>
         </div>
       </details>
 
