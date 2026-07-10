@@ -1,6 +1,11 @@
 (() => {
   "use strict";
 
+  // Bella Travel 아카이브(허브)의 절대경로.
+  // GitHub Pages 프로젝트 사이트 기준 "/레포명/" 형태 (도메인 루트 기준이라 사용자명과 무관하게 동작).
+  // 허브 레포 이름을 바꾸면 이 값만 수정하면 됨.
+  const ARCHIVE_URL = "/bella-travel/";
+
   const TAG_LABEL = { normal: "일정", food: "맛집", onsen: "온천", shop: "쇼핑" };
 
   let currentDay = 1;
@@ -393,6 +398,31 @@
       showBackupStatus("⚠️ 가져오기에 실패했어요. 올바른 백업 파일인지 확인해 주세요.");
     }
   });
+
+  // ---------------- 진입 경로 확인 (Bella Travel 아카이브 연동) ----------------
+  // 아카이브 카드 클릭 시 ?source=archive 로 진입 → 세션 동안 "홈(← Bella Travel)" 버튼 표시.
+  // 동행자에게 공유하는 링크(파라미터 없음)로 직접 접속하면 버튼이 보이지 않는다.
+  // sessionStorage는 path가 아닌 origin(도메인) 단위로 공유되므로, fukuoka-trip과 bella-travel이
+  // 서로 다른 레포(다른 project page)라도 같은 username.github.io 도메인이면 정상 동작한다.
+  const ENTRY_KEY = "bella-entry-source";
+  (function initEntrySource() {
+    const params = new URLSearchParams(location.search);
+    const source = params.get("source");
+    if (source) {
+      try { sessionStorage.setItem(ENTRY_KEY, source); } catch (e) {}
+      // 주소창에서 파라미터를 지워 링크가 지저분해 보이지 않게 함 (세션 플래그로 상태 유지)
+      params.delete("source");
+      const cleanUrl = location.pathname + (params.toString() ? `?${params}` : "") + location.hash;
+      history.replaceState(null, "", cleanUrl);
+    }
+    let entrySource = null;
+    try { entrySource = sessionStorage.getItem(ENTRY_KEY); } catch (e) {}
+    const homeBtn = document.getElementById("homeBtn");
+    if (entrySource === "archive") {
+      homeBtn.hidden = false;
+      homeBtn.addEventListener("click", () => { location.href = ARCHIVE_URL; });
+    }
+  })();
 
   // ---------------- 초기화 ----------------
   renderTimeline();
