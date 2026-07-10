@@ -114,21 +114,10 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 14px;
   flex-shrink: 0;
   margin-top: 2px;
-  background: var(--indigo);
-  position: relative;
+  display: block;
+  object-fit: cover;
   transform: rotate(-4deg);
   box-shadow: var(--shadow);
-}
-.header-mark::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 20px;
-  height: 20px;
-  background: var(--pink);
-  border-radius: 50%;
-  box-shadow: 8px -6px 0 -2px var(--pink), -8px -6px 0 -2px var(--pink), 8px 6px 0 -2px var(--pink), -8px 6px 0 -2px var(--pink);
 }
 
 .day-tabs {
@@ -504,7 +493,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   margin: 16px 0 6px;
   font-weight: 700;
 }
-#modalNote, #mapPromptInput {
+#modalNote {
   width: 100%;
   border-radius: 12px;
   border: 1px solid var(--line);
@@ -516,7 +505,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   font-size: 13.5px;
   resize: vertical;
 }
-#modalNote::placeholder, #mapPromptInput::placeholder { color: var(--ink-soft); opacity: 1; }
+#modalNote::placeholder { color: var(--ink-soft); opacity: 1; }
 .attach-section { margin-top: 18px; }
 .attach-head { display: flex; justify-content: space-between; align-items: center; }
 .attach-grid {

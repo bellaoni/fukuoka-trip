@@ -17,9 +17,6 @@ const DB = (() => {
           const store = db.createObjectStore("attachments", { keyPath: "id" });
           store.createIndex("byItem", "itemId", { unique: false });
         }
-        if (!db.objectStoreNames.contains("settings")) {
-          db.createObjectStore("settings"); // key: settingName
-        }
         if (!db.objectStoreNames.contains("checklist")) {
           db.createObjectStore("checklist"); // key: 'list', value: array
         }
@@ -91,22 +88,6 @@ const DB = (() => {
       const store = await tx("attachments", "readwrite");
       return new Promise((res, rej) => {
         const r = store.delete(id);
-        r.onsuccess = () => res();
-        r.onerror = () => rej(r.error);
-      });
-    },
-    async getSetting(key) {
-      const store = await tx("settings", "readonly");
-      return new Promise((res, rej) => {
-        const r = store.get(key);
-        r.onsuccess = () => res(r.result);
-        r.onerror = () => rej(r.error);
-      });
-    },
-    async setSetting(key, value) {
-      const store = await tx("settings", "readwrite");
-      return new Promise((res, rej) => {
-        const r = store.put(value, key);
         r.onsuccess = () => res();
         r.onerror = () => rej(r.error);
       });

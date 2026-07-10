@@ -54,3 +54,15 @@
 
 수정 후 GitHub repo에 다시 `data.js` 파일만 골라 덮어쓰기 업로드하면 반영돼요
 (Add file → Upload files로 같은 이름 파일을 올리면 자동으로 덮어써져요).
+
+## 4. Bella Travel 아카이브 연동
+
+이 저장소는 **독립 레포로 그대로 유지**됩니다 (`fukuoka-trip`). 별도의 `bella-travel` 레포가
+허브 역할을 하며, 거기서 이 앱으로 들어올 때만 헤더에 홈(←) 버튼이 나타나도록 되어 있어요.
+
+- `app.js` 맨 위 `const ARCHIVE_URL = "/bella-travel/";` 값이 Bella Travel 레포의 절대경로예요.
+  Bella Travel 레포 이름을 다르게 만들었다면 이 한 줄만 그 이름으로 바꿔주면 됩니다.
+- 동행자에게 공유하는 링크는 지금처럼 `https://아이디.github.io/fukuoka-trip/` 그대로 사용하면 됩니다.
+  (파라미터 없이 접속 → 홈 버튼 안 보임 → 지금까지 공유한 링크는 전혀 영향 없어요.)
+- Bella Travel 목록에서 카드를 눌러 들어올 때만 `?source=archive`가 붙고, 그때만 홈 버튼이 보여요.
+
