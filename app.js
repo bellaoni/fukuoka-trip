@@ -10,12 +10,42 @@
 
   let currentDay = 1;
   let currentItem = null; // 현재 모달에 열려있는 item
-  const objectUrls = []; // 생성된 blob object URL 추적 (해제용)
+  const objectUrls = []; // 상세 모달 첨부용 blob object URL 추적 (해제용)
 
-  function revokeObjectUrls() {
-    while (objectUrls.length) {
-      URL.revokeObjectURL(objectUrls.pop());
+  // 첨부(사진/PDF) 그리드 렌더링 공용 함수.
+  // 상세 모달, Visit Japan Web QR 카드 등 첨부가 필요한 곳 어디서든 재사용.
+  // gridId: 그릴 대상 그리드 엘리먼트 id
+  // itemId: DB에 저장된 첨부의 소속 id
+  // urlStore: 이 그리드가 생성한 object URL을 추적/해제하기 위한 배열(호출부마다 별도로 준비)
+  async function renderAttachmentGrid(gridId, itemId, urlStore) {
+    const grid = document.getElementById(gridId);
+    const attachments = await DB.getAttachments(itemId);
+    grid.innerHTML = "";
+    while (urlStore.length) {
+      URL.revokeObjectURL(urlStore.pop());
     }
+    attachments.forEach(att => {
+      const url = URL.createObjectURL(att.blob);
+      urlStore.push(url);
+      const div = document.createElement("div");
+      div.className = "attach-thumb";
+      if (att.type.startsWith("image/")) {
+        div.innerHTML = `<img src="${url}" alt="${att.name}">`;
+      } else {
+        div.innerHTML = `<div class="pdf-badge">📄<br>${att.name}</div>`;
+      }
+      const del = document.createElement("button");
+      del.className = "del-attach";
+      del.textContent = "✕";
+      del.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await DB.deleteAttachment(att.id);
+        renderAttachmentGrid(gridId, itemId, urlStore);
+      });
+      div.appendChild(del);
+      div.addEventListener("click", () => openViewer(att, url));
+      grid.appendChild(div);
+    });
   }
 
   // ---------------- 뷰 전환 ----------------
@@ -171,38 +201,8 @@
   // ---------------- Visit Japan Web QR 카드 ----------------
   const QR_ITEM_ID = "ref-visit-japan-qr";
   const qrObjectUrls = [];
-  function revokeQrObjectUrls() {
-    while (qrObjectUrls.length) {
-      URL.revokeObjectURL(qrObjectUrls.pop());
-    }
-  }
-  async function renderQrAttachments() {
-    const grid = document.getElementById("qrAttachGrid");
-    const attachments = await DB.getAttachments(QR_ITEM_ID);
-    grid.innerHTML = "";
-    revokeQrObjectUrls();
-    attachments.forEach(att => {
-      const url = URL.createObjectURL(att.blob);
-      qrObjectUrls.push(url);
-      const div = document.createElement("div");
-      div.className = "attach-thumb";
-      if (att.type.startsWith("image/")) {
-        div.innerHTML = `<img src="${url}" alt="${att.name}">`;
-      } else {
-        div.innerHTML = `<div class="pdf-badge">📄<br>${att.name}</div>`;
-      }
-      const del = document.createElement("button");
-      del.className = "del-attach";
-      del.textContent = "✕";
-      del.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        await DB.deleteAttachment(att.id);
-        renderQrAttachments();
-      });
-      div.appendChild(del);
-      div.addEventListener("click", () => openViewer(att, url));
-      grid.appendChild(div);
-    });
+  function renderQrAttachments() {
+    return renderAttachmentGrid("qrAttachGrid", QR_ITEM_ID, qrObjectUrls);
   }
   document.getElementById("qrFileInput").addEventListener("change", async (e) => {
     const files = Array.from(e.target.files);
@@ -299,33 +299,8 @@
     noteTimer = setTimeout(() => DB.setNote(id, val), 400);
   });
 
-  async function renderAttachments(itemId) {
-    const grid = document.getElementById("modalAttachGrid");
-    const attachments = await DB.getAttachments(itemId);
-    grid.innerHTML = "";
-    revokeObjectUrls();
-    attachments.forEach(att => {
-      const url = URL.createObjectURL(att.blob);
-      objectUrls.push(url);
-      const div = document.createElement("div");
-      div.className = "attach-thumb";
-      if (att.type.startsWith("image/")) {
-        div.innerHTML = `<img src="${url}" alt="${att.name}">`;
-      } else {
-        div.innerHTML = `<div class="pdf-badge">📄<br>${att.name}</div>`;
-      }
-      const del = document.createElement("button");
-      del.className = "del-attach";
-      del.textContent = "✕";
-      del.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        await DB.deleteAttachment(att.id);
-        renderAttachments(itemId);
-      });
-      div.appendChild(del);
-      div.addEventListener("click", () => openViewer(att, url));
-      grid.appendChild(div);
-    });
+  function renderAttachments(itemId) {
+    return renderAttachmentGrid("modalAttachGrid", itemId, objectUrls);
   }
 
   document.getElementById("modalFileInput").addEventListener("change", async (e) => {

@@ -550,6 +550,9 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   margin-top: 26px;
   text-align: center;
 }
+/* 사진/PDF 확대보기는 QR·이동방법·일본어 카드 등 다른 팝업 위에서 열려도
+   항상 최상단에 보이도록 z-index를 더 높게 지정 */
+#viewerBackdrop { z-index: 120; }
 .viewer-content { max-width: 92vw; max-height: 82vh; }
 .viewer-content img { max-width: 92vw; max-height: 82vh; border-radius: 10px; display: block; }
 .viewer-content iframe { width: 88vw; height: 82vh; border: 0; border-radius: 10px; background: #fff; }
