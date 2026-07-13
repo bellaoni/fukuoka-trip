@@ -1,4 +1,4 @@
-const CACHE_NAME = "fukuoka-trip-v11";
+const CACHE_NAME = "fukuoka-trip-v12";
 const APP_SHELL = [
   "./",
   "./index.html",

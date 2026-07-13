@@ -636,3 +636,30 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   background: repeating-linear-gradient(90deg, var(--tape) 0 8px, transparent 8px 14px);
   opacity: 0.7;
 }
+
+/* ---------------- Visit Japan Web QR 카드 ---------------- */
+.qr-card { max-width: 480px; }
+.qr-body .attach-section { margin-top: 4px; }
+.qr-body .hint-text { margin-top: 10px; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+
+/* ---------------- 자주쓰는 일본어 카드 ---------------- */
+.phrase-card { max-width: 560px; }
+.phrase-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 4px; }
+.phrase-table th,
+.phrase-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.5;
+}
+.phrase-table th {
+  font-family: 'Shippori Mincho', serif;
+  color: var(--indigo-deep);
+  font-weight: 700;
+  font-size: 12.5px;
+  border-bottom: 2px solid var(--indigo-deep);
+}
+.phrase-table td:nth-child(2) { color: var(--indigo-deep); }
+.phrase-table td:nth-child(3) { color: var(--pink-deep); }
+.phrase-table tr:last-child td { border-bottom: none; }

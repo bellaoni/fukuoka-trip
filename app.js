@@ -148,6 +148,12 @@
   function openReferenceCard(id) {
     if (id === "ref-airport-station") {
       document.getElementById("transitCardBackdrop").hidden = false;
+    } else if (id === "ref-visit-japan-qr") {
+      renderQrAttachments();
+      document.getElementById("qrCardBackdrop").hidden = false;
+    } else if (id === "ref-japanese-phrases") {
+      renderPhraseTable();
+      document.getElementById("phraseCardBackdrop").hidden = false;
     }
   }
   document.getElementById("transitCardClose").addEventListener("click", () => {
@@ -159,6 +165,84 @@
   document.getElementById("transitCardBackdrop").addEventListener("click", (e) => {
     if (e.target.id === "transitCardBackdrop") {
       document.getElementById("transitCardBackdrop").hidden = true;
+    }
+  });
+
+  // ---------------- Visit Japan Web QR 카드 ----------------
+  const QR_ITEM_ID = "ref-visit-japan-qr";
+  const qrObjectUrls = [];
+  function revokeQrObjectUrls() {
+    while (qrObjectUrls.length) {
+      URL.revokeObjectURL(qrObjectUrls.pop());
+    }
+  }
+  async function renderQrAttachments() {
+    const grid = document.getElementById("qrAttachGrid");
+    const attachments = await DB.getAttachments(QR_ITEM_ID);
+    grid.innerHTML = "";
+    revokeQrObjectUrls();
+    attachments.forEach(att => {
+      const url = URL.createObjectURL(att.blob);
+      qrObjectUrls.push(url);
+      const div = document.createElement("div");
+      div.className = "attach-thumb";
+      if (att.type.startsWith("image/")) {
+        div.innerHTML = `<img src="${url}" alt="${att.name}">`;
+      } else {
+        div.innerHTML = `<div class="pdf-badge">📄<br>${att.name}</div>`;
+      }
+      const del = document.createElement("button");
+      del.className = "del-attach";
+      del.textContent = "✕";
+      del.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await DB.deleteAttachment(att.id);
+        renderQrAttachments();
+      });
+      div.appendChild(del);
+      div.addEventListener("click", () => openViewer(att, url));
+      grid.appendChild(div);
+    });
+  }
+  document.getElementById("qrFileInput").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files);
+    for (const f of files) {
+      await DB.addAttachment(QR_ITEM_ID, f);
+    }
+    e.target.value = "";
+    renderQrAttachments();
+  });
+  document.getElementById("qrCardClose").addEventListener("click", () => {
+    document.getElementById("qrCardBackdrop").hidden = true;
+  });
+  document.getElementById("qrCardCloseBottom").addEventListener("click", () => {
+    document.getElementById("qrCardBackdrop").hidden = true;
+  });
+  document.getElementById("qrCardBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "qrCardBackdrop") {
+      document.getElementById("qrCardBackdrop").hidden = true;
+    }
+  });
+
+  // ---------------- 자주쓰는 일본어 카드 ----------------
+  function renderPhraseTable() {
+    const body = document.getElementById("phraseTableBody");
+    body.innerHTML = JAPANESE_PHRASES.map(p => `
+      <tr>
+        <td>${p.ko}</td>
+        <td>${p.ja}</td>
+        <td>${p.pron}</td>
+      </tr>`).join("");
+  }
+  document.getElementById("phraseCardClose").addEventListener("click", () => {
+    document.getElementById("phraseCardBackdrop").hidden = true;
+  });
+  document.getElementById("phraseCardCloseBottom").addEventListener("click", () => {
+    document.getElementById("phraseCardBackdrop").hidden = true;
+  });
+  document.getElementById("phraseCardBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "phraseCardBackdrop") {
+      document.getElementById("phraseCardBackdrop").hidden = true;
     }
   });
 

@@ -225,6 +225,50 @@
   </div>
 </div>
 
+<!-- Visit Japan Web QR 카드 팝업 -->
+<div class="viewer-backdrop" id="qrCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet qr-card">
+    <button class="modal-close" id="qrCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>📱 Visit Japan Web QR</h2>
+      <p class="modal-subtitle">각자 본인 QR 캡처본을 올려두면 입국 심사 때 바로 꺼내볼 수 있어요</p>
+    </div>
+    <div class="modal-body qr-body">
+      <div class="attach-section">
+        <div class="attach-head">
+          <span class="field-label">QR 캡처 사진</span>
+          <label class="btn-ghost small attach-add">
+            + 추가
+            <input type="file" id="qrFileInput" accept="image/*" multiple hidden>
+          </label>
+        </div>
+        <div class="attach-grid" id="qrAttachGrid"></div>
+        <p class="hint-text">사진은 이 기기에만 저장돼요. 각자 본인 것을 각자 기기에 업로드해주세요.</p>
+      </div>
+      <button class="btn-primary close-bottom" id="qrCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 자주쓰는 일본어 카드 팝업 -->
+<div class="viewer-backdrop" id="phraseCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet phrase-card">
+    <button class="modal-close" id="phraseCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>🗣️ 자주쓰는 일본어</h2>
+    </div>
+    <div class="modal-body phrase-body">
+      <table class="phrase-table" id="phraseTable">
+        <thead>
+          <tr><th>한국어</th><th>일본어</th><th>발음</th></tr>
+        </thead>
+        <tbody id="phraseTableBody"></tbody>
+      </table>
+      <button class="btn-primary close-bottom" id="phraseCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script src="db.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
