@@ -178,12 +178,18 @@
   function openReferenceCard(id) {
     if (id === "ref-airport-station") {
       document.getElementById("transitCardBackdrop").hidden = false;
-    } else if (id === "ref-visit-japan-qr") {
-      renderQrAttachments();
-      document.getElementById("qrCardBackdrop").hidden = false;
     } else if (id === "ref-japanese-phrases") {
       renderPhraseTable();
       document.getElementById("phraseCardBackdrop").hidden = false;
+    } else if (id === "ref-shopping-stores") {
+      renderStoreTable();
+      document.getElementById("storeCardBackdrop").hidden = false;
+    } else if (id === "ref-shopping-list") {
+      renderShoppingList();
+      document.getElementById("shoppingCardBackdrop").hidden = false;
+    } else if (id === "ref-food-list") {
+      renderFoodList();
+      document.getElementById("foodCardBackdrop").hidden = false;
     }
   }
   document.getElementById("transitCardClose").addEventListener("click", () => {
@@ -198,12 +204,16 @@
     }
   });
 
-  // ---------------- Visit Japan Web QR 카드 ----------------
+  // ---------------- Visit Japan Web QR 카드 (준비물 아래 고정 퀵카드에서 오픈) ----------------
   const QR_ITEM_ID = "ref-visit-japan-qr";
   const qrObjectUrls = [];
   function renderQrAttachments() {
     return renderAttachmentGrid("qrAttachGrid", QR_ITEM_ID, qrObjectUrls);
   }
+  document.getElementById("qrQuickBtn").addEventListener("click", () => {
+    renderQrAttachments();
+    document.getElementById("qrCardBackdrop").hidden = false;
+  });
   document.getElementById("qrFileInput").addEventListener("change", async (e) => {
     const files = Array.from(e.target.files);
     for (const f of files) {
@@ -243,6 +253,82 @@
   document.getElementById("phraseCardBackdrop").addEventListener("click", (e) => {
     if (e.target.id === "phraseCardBackdrop") {
       document.getElementById("phraseCardBackdrop").hidden = true;
+    }
+  });
+
+  // ---------------- 참고정보 공용: 지도 링크 생성 ----------------
+  // mapQuery(검색어 문자열)만 있으면 어디서든 재사용 가능 (상세 모달의 modalMapLink와 동일한 방식)
+  function mapLinkHtml(query) {
+    if (!query) return "";
+    const url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
+    return `<a class="map-link map-link-inline" href="${url}" target="_blank" rel="noopener" aria-label="지도에서 보기">📍</a>`;
+  }
+
+  // ---------------- 쇼핑 추천 매장 카드 (표) ----------------
+  function renderStoreTable() {
+    const body = document.getElementById("storeTableBody");
+    body.innerHTML = SHOPPING_STORES.map(s => `
+      <tr>
+        <td data-label="매장">${s.name}</td>
+        <td data-label="위치">${s.area} ${mapLinkHtml(s.mapQuery)}</td>
+        <td data-label="추천 상품">${s.recommend}</td>
+      </tr>`).join("");
+  }
+  document.getElementById("storeCardClose").addEventListener("click", () => {
+    document.getElementById("storeCardBackdrop").hidden = true;
+  });
+  document.getElementById("storeCardCloseBottom").addEventListener("click", () => {
+    document.getElementById("storeCardBackdrop").hidden = true;
+  });
+  document.getElementById("storeCardBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "storeCardBackdrop") {
+      document.getElementById("storeCardBackdrop").hidden = true;
+    }
+  });
+
+  // ---------------- 쇼핑리스트 / 꼭 먹어야 할 음식 공용 렌더러 ----------------
+  // groups: [{ group, items: [{ title, desc, mapQuery, image }] }] 형태를 그대로 렌더링.
+  // 같은 구조를 쓰기 때문에 다른 여행에서도 SHOPPING_LIST / FOOD_LIST 데이터만 바꾸면 재사용 가능.
+  function renderGroupedList(groups, containerId) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = groups.map((g, gi) => `
+      ${gi > 0 ? '<hr class="washi-divider">' : ""}
+      <h3>${g.group}</h3>
+      <ul class="item-list">
+        ${g.items.map(it => `
+          <li>
+            <div class="item-line">
+              <span class="item-title">${it.title}</span>
+              ${mapLinkHtml(it.mapQuery)}
+            </div>
+            <p class="item-desc">${it.desc}</p>
+          </li>`).join("")}
+      </ul>`).join("");
+  }
+  function renderShoppingList() { renderGroupedList(SHOPPING_LIST, "shoppingListBody"); }
+  function renderFoodList() { renderGroupedList(FOOD_LIST, "foodListBody"); }
+
+  document.getElementById("shoppingCardClose").addEventListener("click", () => {
+    document.getElementById("shoppingCardBackdrop").hidden = true;
+  });
+  document.getElementById("shoppingCardCloseBottom").addEventListener("click", () => {
+    document.getElementById("shoppingCardBackdrop").hidden = true;
+  });
+  document.getElementById("shoppingCardBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "shoppingCardBackdrop") {
+      document.getElementById("shoppingCardBackdrop").hidden = true;
+    }
+  });
+
+  document.getElementById("foodCardClose").addEventListener("click", () => {
+    document.getElementById("foodCardBackdrop").hidden = true;
+  });
+  document.getElementById("foodCardCloseBottom").addEventListener("click", () => {
+    document.getElementById("foodCardBackdrop").hidden = true;
+  });
+  document.getElementById("foodCardBackdrop").addEventListener("click", (e) => {
+    if (e.target.id === "foodCardBackdrop") {
+      document.getElementById("foodCardBackdrop").hidden = true;
     }
   });
 

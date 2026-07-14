@@ -666,3 +666,71 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .phrase-table td:nth-child(2) { color: var(--indigo-deep); }
 .phrase-table td:nth-child(3) { color: var(--pink-deep); }
 .phrase-table tr:last-child td { border-bottom: none; }
+
+/* ---------------- Visit Japan Web 고정 퀵카드 (준비물 아래) ---------------- */
+.quick-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+}
+.quick-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.quick-card-title { font-family: 'Shippori Mincho', serif; font-weight: 700; color: var(--indigo-deep); font-size: 14.5px; }
+.quick-card .hint-text { margin: 0; }
+
+/* ---------------- 참고정보: 쇼핑리스트 / 꼭 먹어야 할 음식 (그룹 리스트 공용) ---------------- */
+.shopping-card, .food-card { max-width: 560px; }
+.group-body h3 { font-size: 15px; color: var(--indigo-deep); margin: 18px 0 8px; }
+.group-body h3:first-child { margin-top: 6px; }
+.item-list { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.item-list li { border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
+.item-list li:last-child { border-bottom: none; padding-bottom: 0; }
+.item-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.item-title { font-weight: 700; font-size: 14px; color: var(--ink); }
+.item-desc { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+.map-link-inline { margin: 0; font-size: 15px; flex-shrink: 0; text-decoration: none; }
+
+/* ---------------- 참고정보: 쇼핑 추천 매장 (표) ---------------- */
+.store-card { max-width: 640px; }
+.store-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 4px; }
+.store-table th,
+.store-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.5;
+}
+.store-table th {
+  font-family: 'Shippori Mincho', serif;
+  color: var(--indigo-deep);
+  font-weight: 700;
+  font-size: 12.5px;
+  border-bottom: 2px solid var(--indigo-deep);
+}
+.store-table tr:last-child td { border-bottom: none; }
+
+/* 좁은 화면에서는 표 대신 카드형(세로) 레이아웃으로 자동 전환 */
+@media (max-width: 480px) {
+  .store-table, .store-table thead, .store-table tbody,
+  .store-table th, .store-table td, .store-table tr { display: block; }
+  .store-table thead { display: none; }
+  .store-table tr {
+    margin-bottom: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: var(--paper-raised);
+  }
+  .store-table tr:last-child { margin-bottom: 0; }
+  .store-table td { border-bottom: none; padding: 4px 0; }
+  .store-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 2px;
+  }
+}

@@ -80,6 +80,14 @@
         </div>
       </details>
 
+      <div class="quick-card" id="qrQuickCard">
+        <div class="quick-card-head">
+          <span class="quick-card-title">📱 Visit Japan Web</span>
+          <button class="btn-ghost small" id="qrQuickBtn" type="button">보기</button>
+        </div>
+        <p class="hint-text">입국 전 미리 작성해두면 공항에서 QR로 빠르게 통과할 수 있어요.</p>
+      </div>
+
       <details class="accordion">
         <summary>참고정보</summary>
         <div class="accordion-body">
@@ -265,6 +273,53 @@
         <tbody id="phraseTableBody"></tbody>
       </table>
       <button class="btn-primary close-bottom" id="phraseCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 쇼핑 추천 매장 카드 팝업 -->
+<div class="viewer-backdrop" id="storeCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet store-card">
+    <button class="modal-close" id="storeCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>🛍️ 쇼핑 추천 매장</h2>
+    </div>
+    <div class="modal-body store-body">
+      <table class="store-table" id="storeTable">
+        <thead>
+          <tr><th>매장</th><th>위치</th><th>추천 상품</th></tr>
+        </thead>
+        <tbody id="storeTableBody"></tbody>
+      </table>
+      <button class="btn-primary close-bottom" id="storeCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 쇼핑리스트 카드 팝업 -->
+<div class="viewer-backdrop" id="shoppingCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet shopping-card">
+    <button class="modal-close" id="shoppingCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>🛒 쇼핑리스트</h2>
+    </div>
+    <div class="modal-body group-body">
+      <div id="shoppingListBody"></div>
+      <button class="btn-primary close-bottom" id="shoppingCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 꼭 먹어야 할 음식 카드 팝업 -->
+<div class="viewer-backdrop" id="foodCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet food-card">
+    <button class="modal-close" id="foodCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>🍜 꼭 먹어야 할 음식</h2>
+    </div>
+    <div class="modal-body group-body">
+      <div id="foodListBody"></div>
+      <button class="btn-primary close-bottom" id="foodCardCloseBottom" type="button">닫기</button>
     </div>
   </div>
 </div>
