@@ -163,65 +163,62 @@ const REFERENCE_ITEMS = [
 ];
 
 // "자주쓰는 일본어" 카드에 노출되는 표현 목록
+// category별로 묶어 표시함 (인사·기본 / 식당·카페 / 쇼핑 / 이동·기타)
 const JAPANESE_PHRASES = [
-  { ko: "안녕하세요", ja: "こんにちは", pron: "곤니치와" },
-  { ko: "감사합니다", ja: "ありがとうございます", pron: "아리가토 고자이마스" },
-  { ko: "실례합니다", ja: "すみません", pron: "스미마센" },
-  { ko: "계산해주세요", ja: "お会計お願いします", pron: "오카이케이 오네가이시마스" },
-  { ko: "얼마예요?", ja: "いくらですか？", pron: "이쿠라 데스카" },
-  { ko: "카드 되나요?", ja: "カード使えますか？", pron: "카도 츠카에마스카" },
-  { ko: "화장실 어디예요?", ja: "トイレはどこですか？", pron: "토이레와 도코 데스카" },
-  { ko: "괜찮습니다", ja: "大丈夫です", pron: "다이조부 데스" },
-  { ko: "봉투 주세요", ja: "袋お願いします", pron: "후쿠로 오네가이시마스" },
-  { ko: "영수증 주세요", ja: "レシートお願いします", pron: "레시토 오네가이시마스" },
-  { ko: "이걸로 주세요", ja: "これをお願いします", pron: "코레오 오네가이시마스" },
-  { ko: "추천해주세요", ja: "おすすめは何ですか？", pron: "오스스메와 난 데스카" },
-  { ko: "맛있어요", ja: "おいしいです", pron: "오이시이 데스" },
-  { ko: "물 주세요", ja: "お水お願いします", pron: "오미즈 오네가이시마스" },
-  { ko: "현금만 되나요?", ja: "現金だけですか？", pron: "겐킨 다케 데스카" },
-  { ko: "천천히 말씀해주세요", ja: "ゆっくり話してください", pron: "윳쿠리 하나시테 쿠다사이" },
-  { ko: "여기서 먹을게요", ja: "ここで食べます", pron: "코코데 타베마스" },
-  { ko: "포장해주세요", ja: "持ち帰りでお願いします", pron: "모치카에리데 오네가이시마스" },
-  { ko: "이거 시식해도 되나요?", ja: "試食してもいいですか？", pron: "시쇼쿠시테모 이이데스카" },
-  { ko: "짐 맡길 수 있나요?", ja: "荷物を預けられますか？", pron: "니모츠오 아즈케라레마스카" },
-  { ko: "면세 가능한가요?", ja: "免税できますか？", pron: "멘제이 데키마스카" },
-  { ko: "세일 중인가요?", ja: "セール中ですか？", pron: "세루츄 데스카" },
-  { ko: "사진 찍어도 되나요?", ja: "写真を撮ってもいいですか？", pron: "샤신오 톳테모 이이데스카" },
-  { ko: "이거 어디 가는 버스예요?", ja: "これはどこ行きのバスですか？", pron: "코레와 도코유키노 바스데스카" },
+  // 🙋 인사·기본
+  { category: "🙋 인사·기본", ko: "안녕하세요", ja: "こんにちは", pron: "곤니치와" },
+  { category: "🙋 인사·기본", ko: "감사합니다", ja: "ありがとうございます", pron: "아리가토 고자이마스" },
+  { category: "🙋 인사·기본", ko: "실례합니다", ja: "すみません", pron: "스미마센" },
+  { category: "🙋 인사·기본", ko: "괜찮습니다", ja: "大丈夫です", pron: "다이조부 데스" },
+  { category: "🙋 인사·기본", ko: "천천히 말씀해주세요", ja: "ゆっくり話してください", pron: "윳쿠리 하나시테 쿠다사이" },
+  { category: "🙋 인사·기본", ko: "사진 찍어도 되나요?", ja: "写真を撮ってもいいですか？", pron: "샤신오 톳테모 이이데스카" },
+
+  // 🍜 식당·카페
+  { category: "🍜 식당·카페", ko: "계산해주세요", ja: "お会計お願いします", pron: "오카이케이 오네가이시마스" },
+  { category: "🍜 식당·카페", ko: "얼마예요?", ja: "いくらですか？", pron: "이쿠라 데스카" },
+  { category: "🍜 식당·카페", ko: "추천해주세요", ja: "おすすめは何ですか？", pron: "오스스메와 난 데스카" },
+  { category: "🍜 식당·카페", ko: "맛있어요", ja: "おいしいです", pron: "오이시이 데스" },
+  { category: "🍜 식당·카페", ko: "물 주세요", ja: "お水お願いします", pron: "오미즈 오네가이시마스" },
+  { category: "🍜 식당·카페", ko: "여기서 먹을게요", ja: "ここで食べます", pron: "코코데 타베마스" },
+  { category: "🍜 식당·카페", ko: "포장해주세요", ja: "持ち帰りでお願いします", pron: "모치카에리데 오네가이시마스" },
+
+  // 🛍️ 쇼핑
+  { category: "🛍️ 쇼핑", ko: "카드 되나요?", ja: "カード使えますか？", pron: "카도 츠카에마스카" },
+  { category: "🛍️ 쇼핑", ko: "봉투 주세요", ja: "袋お願いします", pron: "후쿠로 오네가이시마스" },
+  { category: "🛍️ 쇼핑", ko: "영수증 주세요", ja: "レシートお願いします", pron: "레시토 오네가이시마스" },
+  { category: "🛍️ 쇼핑", ko: "이걸로 주세요", ja: "これをお願いします", pron: "코레오 오네가이시마스" },
+  { category: "🛍️ 쇼핑", ko: "현금만 되나요?", ja: "現金だけですか？", pron: "겐킨 다케 데스카" },
+  { category: "🛍️ 쇼핑", ko: "이거 시식해도 되나요?", ja: "試食してもいいですか？", pron: "시쇼쿠시테모 이이데스카" },
+  { category: "🛍️ 쇼핑", ko: "면세 가능한가요?", ja: "免税できますか？", pron: "멘제이 데키마스카" },
+  { category: "🛍️ 쇼핑", ko: "세일 중인가요?", ja: "セール中ですか？", pron: "세루츄 데스카" },
+
+  // 🚌 이동·기타
+  { category: "🚌 이동·기타", ko: "화장실 어디예요?", ja: "トイレはどこですか？", pron: "토이레와 도코 데스카" },
+  { category: "🚌 이동·기타", ko: "짐 맡길 수 있나요?", ja: "荷物を預けられますか？", pron: "니모츠오 아즈케라레마스카" },
+  { category: "🚌 이동·기타", ko: "이거 어디 가는 버스예요?", ja: "これはどこ行きのバスですか？", pron: "코레와 도코유키노 바스데스카" },
 ];
 
 // ---------------- 참고정보: 쇼핑 추천 매장 (표) ----------------
-// 필드명은 다른 여행에서도 그대로 재사용 가능하도록 통일함: name/area/recommend/mapQuery/image
-// image는 지금은 비워두고, 나중에 매장 사진 URL만 채우면 카드에 자동 반영되도록 준비해둠(추후 확장용)
+// 필드명은 다른 여행에서도 그대로 재사용 가능하도록 통일함: name/area/hours/recommend/mapQuery/image
+// image는 지금은 비워두고, 나중에 매장 사진 URL을 채우면 표에 썸네일로 자동 표시됨(추후 확장용, 필수 아님)
+// hours는 2026년 7월 기준 조사 값으로, 시설 사정에 따라 변경될 수 있어 방문 전 재확인 권장
 const SHOPPING_STORES = [
-  { name: "UNIQLO", area: "미나 텐진", recommend: "여성 의류, 에어리즘, 린넨셔츠", mapQuery: "유니클로 미나 텐진", image: null },
-  { name: "GU", area: "미나 텐진", recommend: "여성 의류, 원피스, 신발", mapQuery: "GU 미나 텐진", image: null },
-  { name: "MUJI", area: "JR 하카타시티", recommend: "생활용품, 의류, 화장품, 간식", mapQuery: "무인양품 JR 하카타시티", image: null },
-  { name: "LOFT", area: "미나 텐진", recommend: "문구, 여행용품, 화장품", mapQuery: "로프트 미나 텐진", image: null },
-  { name: "@cosme STORE", area: "텐진", recommend: "일본 인기 화장품", mapQuery: "코스메 스토어 텐진", image: null },
-  { name: "PLAZA", area: "텐진", recommend: "화장품, 캐릭터 굿즈, 간식", mapQuery: "플라자 텐진", image: null },
-  { name: "CASETiFY", area: "아뮤플라자 하카타", recommend: "휴대폰 케이스, 액세서리", mapQuery: "케이스티파이 아뮤플라자 하카타", image: null },
-  { name: "Don Quijote", area: "텐진", recommend: "과자, 의약품, 화장품, 기념품", mapQuery: "돈키호테 텐진", image: null },
+  { name: "UNIQLO", area: "미나 텐진", hours: "10:00~20:00", recommend: "여성 의류, 에어리즘, 린넨셔츠", mapQuery: "유니클로 미나 텐진", image: null },
+  { name: "GU", area: "미나 텐진", hours: "10:00~20:00", recommend: "여성 의류, 원피스, 신발", mapQuery: "GU 미나 텐진", image: null },
+  { name: "MUJI", area: "JR 하카타시티", hours: "10:00~20:00", recommend: "생활용품, 의류, 화장품, 간식", mapQuery: "무인양품 JR 하카타시티", image: null },
+  { name: "LOFT", area: "미나 텐진", hours: "10:00~20:00", recommend: "문구, 여행용품, 화장품", mapQuery: "로프트 미나 텐진", image: null },
+  { name: "@cosme STORE", area: "텐진", hours: "10:00~20:30", recommend: "일본 인기 화장품", mapQuery: "코스메 스토어 텐진", image: null },
+  { name: "PLAZA", area: "텐진", hours: "10:00~20:00", recommend: "화장품, 캐릭터 굿즈, 간식", mapQuery: "플라자 텐진", image: null },
+  { name: "CASETiFY", area: "아뮤플라자 하카타", hours: "10:00~20:00", recommend: "휴대폰 케이스, 액세서리", mapQuery: "케이스티파이 아뮤플라자 하카타", image: null },
+  { name: "Don Quijote", area: "텐진", hours: "24시간", recommend: "과자, 의약품, 화장품, 기념품", mapQuery: "돈키호테 텐진", image: null },
 ];
 
 // ---------------- 참고정보: 쇼핑리스트 / 꼭 먹어야 할 음식 공통 데이터 구조 ----------------
 // group: 그룹 제목(이모지 포함) / items: { title, desc(한줄 설명), mapQuery, image } 배열
 // 이 구조는 쇼핑리스트·음식 카드가 공유하며, 다른 여행 데이터로도 그대로 재사용 가능함
 
-// ---------------- 참고정보: 쇼핑리스트 ----------------
+// ---------------- 참고정보: 쇼핑리스트 (돈키호테 · 기념품만 - 편의점/텐진지하상가 간식류는 음식 카드로 이동) ----------------
 const SHOPPING_LIST = [
-  { group: "🏪 세븐일레븐", items: [
-    { title: "아이스 고구마", desc: "여름 한정 인기 간식, 시원하고 달콤", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "계란샌드", desc: "편의점 스테디셀러, 폭신한 계란 샌드위치", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "푸딩", desc: "부드러운 커스터드 푸딩", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "메론빵", desc: "겉은 바삭 속은 폭신한 인기 빵", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "프리미엄 커피", desc: "편의점 원두 커피, 가성비 좋음", mapQuery: "세븐일레븐 하카타역", image: null },
-  ]},
-  { group: "🍠 텐진 지하상가", items: [
-    { title: "이모야 킨지로 이모켄피", desc: "텐진 지하상가 인기 고구마 스틱, 갓 튀겨줌", mapQuery: "이모야 킨지로 텐진 지하상가", image: null },
-    { title: "RINGO 애플파이", desc: "겉바속촉 즉석 구이 애플파이", mapQuery: "링고 애플파이 텐진", image: null },
-    { title: "아마오우 딸기 디저트", desc: "후쿠오카 명물 딸기로 만든 디저트", mapQuery: "아마오우 딸기 디저트 텐진", image: null },
-  ]},
   { group: "🛍️ 돈키호테", items: [
     { title: "곤약젤리", desc: "저칼로리 인기 젤리 간식", mapQuery: "돈키호테 텐진", image: null },
     { title: "자가리코", desc: "바삭한 스틱 감자칩 과자", mapQuery: "돈키호테 텐진", image: null },
@@ -243,7 +240,7 @@ const SHOPPING_LIST = [
   ]},
 ];
 
-// ---------------- 참고정보: 꼭 먹어야 할 음식 ----------------
+// ---------------- 참고정보: 꼭 먹어야 할 음식 (간식은 구매처별로 분류) ----------------
 const FOOD_LIST = [
   { group: "🍽️ 식사", items: [
     { title: "하카타 돈코츠 라멘", desc: "진한 돼지뼈 육수, 후쿠오카 대표 라멘", mapQuery: "하카타 돈코츠 라멘 맛집", image: null },
@@ -255,20 +252,20 @@ const FOOD_LIST = [
     { title: "회전초밥", desc: "신선한 규슈산 해산물 초밥", mapQuery: "회전초밥 후쿠오카", image: null },
     { title: "야타이 (포장마차)", desc: "나카스 강변의 후쿠오카 명물 포장마차", mapQuery: "나카스 야타이", image: null },
   ]},
-  { group: "🍰 간식", items: [
-    { title: "세븐일레븐 아이스 고구마", desc: "여름 한정 인기 간식", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "이모야 킨지로 고구마스틱", desc: "텐진 지하상가 즉석 튀김 고구마 스틱", mapQuery: "이모야 킨지로 텐진 지하상가", image: null },
-    { title: "RINGO 애플파이", desc: "즉석 구이 애플파이", mapQuery: "링고 애플파이 텐진", image: null },
-    { title: "아마오우 딸기 디저트", desc: "후쿠오카 명물 딸기 디저트", mapQuery: "아마오우 딸기 디저트 텐진", image: null },
-    { title: "푸딩", desc: "편의점 인기 커스터드 푸딩", mapQuery: "세븐일레븐 하카타역", image: null },
+  { group: "🍰 간식 · 세븐일레븐", items: [
+    { title: "아이스 고구마", desc: "여름 한정 인기 간식, 시원하고 달콤", mapQuery: "세븐일레븐 하카타역", image: null },
+    { title: "계란샌드", desc: "편의점 스테디셀러, 폭신한 계란 샌드위치", mapQuery: "세븐일레븐 하카타역", image: null },
+    { title: "푸딩", desc: "부드러운 커스터드 푸딩", mapQuery: "세븐일레븐 하카타역", image: null },
+    { title: "메론빵", desc: "겉은 바삭 속은 폭신한 인기 빵", mapQuery: "세븐일레븐 하카타역", image: null },
+    { title: "프리미엄 커피", desc: "편의점 원두 커피, 가성비 좋음", mapQuery: "세븐일레븐 하카타역", image: null },
+  ]},
+  { group: "🍰 간식 · 텐진 지하상가", items: [
+    { title: "이모야 킨지로 이모켄피", desc: "텐진 지하상가 인기 고구마 스틱, 갓 튀겨줌", mapQuery: "이모야 킨지로 텐진 지하상가", image: null },
+    { title: "RINGO 애플파이", desc: "겉바속촉 즉석 구이 애플파이", mapQuery: "링고 애플파이 텐진", image: null },
+    { title: "아마오우 딸기 디저트", desc: "후쿠오카 명물 딸기로 만든 디저트", mapQuery: "아마오우 딸기 디저트 텐진", image: null },
+  ]},
+  { group: "🍰 간식 · 그 외", items: [
     { title: "멘타이 프랑스빵", desc: "명란 버터를 바른 후쿠오카 명물 빵", mapQuery: "멘타이 프랑스빵 후쿠오카", image: null },
     { title: "말차 아이스크림", desc: "진한 말차 향의 아이스크림", mapQuery: "말차 아이스크림 후쿠오카", image: null },
-  ]},
-  { group: "🎁 추천 선물", items: [
-    { title: "하카타 토리몬", desc: "후쿠오카 대표 기념품", mapQuery: "하카타 토리몬 후쿠오카", image: null },
-    { title: "멘베이", desc: "명란 시즈닝 과자", mapQuery: "멘베이 후쿠오카", image: null },
-    { title: "명란", desc: "후쿠오카 특산 명란젓", mapQuery: "명란 후쿠오카 선물", image: null },
-    { title: "치쿠시모치", desc: "쫄깃한 인절미 화과자", mapQuery: "치쿠시모치 후쿠오카", image: null },
-    { title: "아마오우 딸기 과자", desc: "딸기맛 과자류", mapQuery: "아마오우 딸기 과자 후쿠오카", image: null },
   ]},
 ];

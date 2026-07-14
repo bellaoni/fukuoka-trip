@@ -237,12 +237,16 @@
   // ---------------- 자주쓰는 일본어 카드 ----------------
   function renderPhraseTable() {
     const body = document.getElementById("phraseTableBody");
-    body.innerHTML = JAPANESE_PHRASES.map(p => `
-      <tr>
-        <td>${p.ko}</td>
-        <td>${p.ja}</td>
-        <td>${p.pron}</td>
-      </tr>`).join("");
+    let html = "";
+    let lastCategory = null;
+    JAPANESE_PHRASES.forEach(p => {
+      if (p.category && p.category !== lastCategory) {
+        html += `<tr class="phrase-cat"><td colspan="3">${p.category}</td></tr>`;
+        lastCategory = p.category;
+      }
+      html += `<tr><td>${p.ko}</td><td>${p.ja}</td><td>${p.pron}</td></tr>`;
+    });
+    body.innerHTML = html;
   }
   document.getElementById("phraseCardClose").addEventListener("click", () => {
     document.getElementById("phraseCardBackdrop").hidden = true;
@@ -269,8 +273,14 @@
     const body = document.getElementById("storeTableBody");
     body.innerHTML = SHOPPING_STORES.map(s => `
       <tr>
-        <td data-label="매장">${s.name}</td>
+        <td data-label="매장">
+          <div class="store-name-cell">
+            ${s.image ? `<img class="item-thumb" src="${s.image}" alt="">` : ""}
+            <span>${s.name}</span>
+          </div>
+        </td>
         <td data-label="위치">${s.area} ${mapLinkHtml(s.mapQuery)}</td>
+        <td data-label="영업시간">${s.hours || "-"}</td>
         <td data-label="추천 상품">${s.recommend}</td>
       </tr>`).join("");
   }
@@ -297,11 +307,14 @@
       <ul class="item-list">
         ${g.items.map(it => `
           <li>
-            <div class="item-line">
-              <span class="item-title">${it.title}</span>
-              ${mapLinkHtml(it.mapQuery)}
+            ${it.image ? `<img class="item-thumb" src="${it.image}" alt="">` : ""}
+            <div class="item-content">
+              <div class="item-line">
+                <span class="item-title">${it.title}</span>
+                ${mapLinkHtml(it.mapQuery)}
+              </div>
+              <p class="item-desc">${it.desc}</p>
             </div>
-            <p class="item-desc">${it.desc}</p>
           </li>`).join("")}
       </ul>`).join("");
   }
