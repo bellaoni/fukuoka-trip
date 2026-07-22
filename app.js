@@ -343,11 +343,16 @@
     if (type === "personal") return krw;
     return 0;
   }
-  function fmtKRW(n) { return "₩" + Math.round(n).toLocaleString("ko-KR"); }
-  function fmtOriginal(e) {
-    const n = e.currency === "KRW" ? e.amount.toLocaleString("ko-KR") : e.amount.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
-    return `${n} ${e.currency}`;
+  // 통화 표시 규칙: 기호가 있는 통화는 기호+숫자(₩1,000), 기호가 없는 통화는 숫자+코드(1,000 VND)
+  // 다른 여행(다른 통화)에서도 그대로 재사용 가능하도록 맵만 채워서 씀
+  const CURRENCY_SYMBOLS = { KRW: "₩", USD: "$", JPY: "¥", EUR: "€", GBP: "£", CNY: "¥" };
+  function formatMoney(amount, currency) {
+    const symbol = CURRENCY_SYMBOLS[currency];
+    const numStr = amount.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+    return symbol ? `${symbol}${numStr}` : `${numStr} ${currency}`;
   }
+  function fmtKRW(n) { return formatMoney(Math.round(n), "KRW"); }
+  function fmtOriginal(e) { return formatMoney(e.amount, e.currency); }
   function renderExpenses() {
     const rows = EXPENSES
       .map(e => ({ ...e, type: classifyExpense(e) }))
@@ -392,7 +397,7 @@
             </tr>`;
         }).join("");
         const currencyNote = Object.entries(data.currencyTotals)
-          .map(([cur, sum]) => `${cur} ${sum.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}`)
+          .map(([cur, sum]) => formatMoney(sum, cur))
           .join(" · ");
         return `
           <details class="accordion accordion-nested">
