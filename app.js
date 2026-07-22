@@ -12,6 +12,58 @@
   let currentItem = null; // 현재 모달에 열려있는 item
   const objectUrls = []; // 상세 모달 첨부용 blob object URL 추적 (해제용)
 
+  // ---------------- 공용: 팝업 카드 닫기 바인딩 ----------------
+  // "{prefix}Backdrop" / "{prefix}Close" / "{prefix}CloseBottom" 이라는 id 규칙만 지키면
+  // 어떤 팝업(모달/뷰어/각종 참고정보 카드)이든 닫기 버튼 3종(상단 X · 하단 버튼 · 배경 클릭)을
+  // 한 줄로 연결해준다. CloseBottom 버튼이 없는 팝업(예: 뷰어)은 자동으로 건너뛴다.
+  // onClose: 배경 hidden 처리 외에 추가로 정리할 상태가 있을 때만 넘기면 됨 (예: currentItem 리셋)
+  function bindCardClose(prefix, onClose) {
+    const backdrop = document.getElementById(prefix + "Backdrop");
+    if (!backdrop) return;
+    const doClose = () => {
+      backdrop.hidden = true;
+      if (onClose) onClose();
+    };
+    const closeBtn = document.getElementById(prefix + "Close");
+    if (closeBtn) closeBtn.addEventListener("click", doClose);
+    const bottomBtn = document.getElementById(prefix + "CloseBottom");
+    if (bottomBtn) bottomBtn.addEventListener("click", doClose);
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) doClose();
+    });
+  }
+
+  // ---------------- 공용: 첨부 이미지 업로드 전 리사이즈 ----------------
+  // 아이폰 카메라 원본(장당 3~8MB)을 그대로 저장하면 기기 용량과 백업 파일 크기가 금방 커지므로,
+  // 긴 변 기준 MAX_DIM을 넘는 이미지는 캔버스로 축소한 뒤 JPEG로 재압축해서 저장한다.
+  // - PDF 등 이미지가 아닌 파일은 그대로 통과
+  // - GIF는 리사이즈 시 애니메이션이 깨지므로 원본 유지
+  // - createImageBitmap 미지원 등 예외 상황에서는 원본 파일을 그대로 반환 (기능 저하 없이 안전하게 폴백)
+  const RESIZE_MAX_DIM = 1600;
+  const RESIZE_QUALITY = 0.85;
+  async function resizeImageIfNeeded(file) {
+    if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, RESIZE_MAX_DIM / Math.max(bitmap.width, bitmap.height));
+      if (scale >= 1) {
+        if (bitmap.close) bitmap.close();
+        return file; // 이미 충분히 작음
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      if (bitmap.close) bitmap.close();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", RESIZE_QUALITY));
+      if (!blob) return file;
+      const newName = file.name.replace(/\.\w+$/, "") + ".jpg";
+      return new File([blob], newName, { type: "image/jpeg" });
+    } catch (e) {
+      return file; // 리사이즈 실패 시 원본 그대로 저장 (안전한 폴백)
+    }
+  }
+
   // 첨부(사진/PDF) 그리드 렌더링 공용 함수.
   // 상세 모달, Visit Japan Web QR 카드 등 첨부가 필요한 곳 어디서든 재사용.
   // gridId: 그릴 대상 그리드 엘리먼트 id
@@ -192,18 +244,6 @@
       document.getElementById("foodCardBackdrop").hidden = false;
     }
   }
-  document.getElementById("transitCardClose").addEventListener("click", () => {
-    document.getElementById("transitCardBackdrop").hidden = true;
-  });
-  document.getElementById("transitCardCloseBottom").addEventListener("click", () => {
-    document.getElementById("transitCardBackdrop").hidden = true;
-  });
-  document.getElementById("transitCardBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "transitCardBackdrop") {
-      document.getElementById("transitCardBackdrop").hidden = true;
-    }
-  });
-
   // ---------------- Visit Japan Web QR 카드 (준비물 아래 고정 퀵카드에서 오픈) ----------------
   const QR_ITEM_ID = "ref-visit-japan-qr";
   const qrObjectUrls = [];
@@ -217,21 +257,11 @@
   document.getElementById("qrFileInput").addEventListener("change", async (e) => {
     const files = Array.from(e.target.files);
     for (const f of files) {
-      await DB.addAttachment(QR_ITEM_ID, f);
+      const resized = await resizeImageIfNeeded(f);
+      await DB.addAttachment(QR_ITEM_ID, resized);
     }
     e.target.value = "";
     renderQrAttachments();
-  });
-  document.getElementById("qrCardClose").addEventListener("click", () => {
-    document.getElementById("qrCardBackdrop").hidden = true;
-  });
-  document.getElementById("qrCardCloseBottom").addEventListener("click", () => {
-    document.getElementById("qrCardBackdrop").hidden = true;
-  });
-  document.getElementById("qrCardBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "qrCardBackdrop") {
-      document.getElementById("qrCardBackdrop").hidden = true;
-    }
   });
 
   // ---------------- 자주쓰는 일본어 카드 ----------------
@@ -248,18 +278,6 @@
     });
     body.innerHTML = html;
   }
-  document.getElementById("phraseCardClose").addEventListener("click", () => {
-    document.getElementById("phraseCardBackdrop").hidden = true;
-  });
-  document.getElementById("phraseCardCloseBottom").addEventListener("click", () => {
-    document.getElementById("phraseCardBackdrop").hidden = true;
-  });
-  document.getElementById("phraseCardBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "phraseCardBackdrop") {
-      document.getElementById("phraseCardBackdrop").hidden = true;
-    }
-  });
-
   // ---------------- 참고정보 공용: 지도 링크 생성 ----------------
   // mapQuery(검색어 문자열)만 있으면 어디서든 재사용 가능 (상세 모달의 modalMapLink와 동일한 방식)
   function mapLinkHtml(query) {
@@ -284,18 +302,6 @@
         <td data-label="추천 상품">${s.recommend}</td>
       </tr>`).join("");
   }
-  document.getElementById("storeCardClose").addEventListener("click", () => {
-    document.getElementById("storeCardBackdrop").hidden = true;
-  });
-  document.getElementById("storeCardCloseBottom").addEventListener("click", () => {
-    document.getElementById("storeCardBackdrop").hidden = true;
-  });
-  document.getElementById("storeCardBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "storeCardBackdrop") {
-      document.getElementById("storeCardBackdrop").hidden = true;
-    }
-  });
-
   // ---------------- 쇼핑리스트 / 꼭 먹어야 할 음식 공용 렌더러 ----------------
   // groups: [{ group, items: [{ title, desc, mapQuery, image }] }] 형태를 그대로 렌더링.
   // 같은 구조를 쓰기 때문에 다른 여행에서도 SHOPPING_LIST / FOOD_LIST 데이터만 바꾸면 재사용 가능.
@@ -320,30 +326,6 @@
   }
   function renderShoppingList() { renderGroupedList(SHOPPING_LIST, "shoppingListBody"); }
   function renderFoodList() { renderGroupedList(FOOD_LIST, "foodListBody"); }
-
-  document.getElementById("shoppingCardClose").addEventListener("click", () => {
-    document.getElementById("shoppingCardBackdrop").hidden = true;
-  });
-  document.getElementById("shoppingCardCloseBottom").addEventListener("click", () => {
-    document.getElementById("shoppingCardBackdrop").hidden = true;
-  });
-  document.getElementById("shoppingCardBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "shoppingCardBackdrop") {
-      document.getElementById("shoppingCardBackdrop").hidden = true;
-    }
-  });
-
-  document.getElementById("foodCardClose").addEventListener("click", () => {
-    document.getElementById("foodCardBackdrop").hidden = true;
-  });
-  document.getElementById("foodCardCloseBottom").addEventListener("click", () => {
-    document.getElementById("foodCardBackdrop").hidden = true;
-  });
-  document.getElementById("foodCardBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "foodCardBackdrop") {
-      document.getElementById("foodCardBackdrop").hidden = true;
-    }
-  });
 
   // ---------------- 지도 (모두에게 동일 - data.js의 TRIP.mapEmbedUrl 고정 사용) ----------------
   function renderMap() {
@@ -378,16 +360,6 @@
     document.getElementById("modalBackdrop").hidden = false;
   }
 
-  function closeModal() {
-    document.getElementById("modalBackdrop").hidden = true;
-    currentItem = null;
-  }
-  document.getElementById("modalClose").addEventListener("click", closeModal);
-  document.getElementById("modalCloseBottom").addEventListener("click", closeModal);
-  document.getElementById("modalBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "modalBackdrop") closeModal();
-  });
-
   // 메모 자동저장 (debounce)
   let noteTimer = null;
   document.getElementById("modalNote").addEventListener("input", (e) => {
@@ -406,7 +378,8 @@
     if (!currentItem) return;
     const files = Array.from(e.target.files);
     for (const f of files) {
-      await DB.addAttachment(currentItem.id, f);
+      const resized = await resizeImageIfNeeded(f);
+      await DB.addAttachment(currentItem.id, resized);
     }
     e.target.value = "";
     renderAttachments(currentItem.id);
@@ -424,13 +397,6 @@
     }
     document.getElementById("viewerBackdrop").hidden = false;
   }
-  document.getElementById("viewerClose").addEventListener("click", () => {
-    document.getElementById("viewerBackdrop").hidden = true;
-  });
-  document.getElementById("viewerBackdrop").addEventListener("click", (e) => {
-    if (e.target.id === "viewerBackdrop") document.getElementById("viewerBackdrop").hidden = true;
-  });
-
   // ---------------- 네비게이션 바인딩 ----------------
   document.getElementById("dayTabs").addEventListener("click", (e) => {
     const btn = e.target.closest(".day-tab");
@@ -581,6 +547,16 @@
       homeBtn.addEventListener("click", () => { location.href = ARCHIVE_URL; });
     }
   })();
+
+  // ---------------- 팝업 닫기 일괄 바인딩 ----------------
+  bindCardClose("modal", () => { currentItem = null; });
+  bindCardClose("viewer");
+  bindCardClose("transitCard");
+  bindCardClose("qrCard");
+  bindCardClose("phraseCard");
+  bindCardClose("storeCard");
+  bindCardClose("shoppingCard");
+  bindCardClose("foodCard");
 
   // ---------------- 초기화 ----------------
   renderTimeline();
