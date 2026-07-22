@@ -327,6 +327,64 @@
   function renderShoppingList() { renderGroupedList(SHOPPING_LIST, "shoppingListBody"); }
   function renderFoodList() { renderGroupedList(FOOD_LIST, "foodListBody"); }
 
+  // ---------------- 가계부 (나만 보기 전용) ----------------
+  // 분류 로직: splitWith 인원수 > 1 → 공동경비(내 몫 = 금액/인원수)
+  //           splitWith 인원수 = 1 & 그 사람이 나 → 개인경비(전액)
+  //           splitWith 인원수 = 1 & 그 사람이 내가 아님 → 내 가계부에서 제외
+  function classifyExpense(e) {
+    const n = e.splitWith.length;
+    if (n > 1) return "shared";
+    if (n === 1 && e.splitWith[0] === ME_NAME) return "personal";
+    return "excluded";
+  }
+  function myShare(e, type) {
+    const krw = e.amount * e.krwRate;
+    if (type === "shared") return krw / e.splitWith.length;
+    if (type === "personal") return krw;
+    return 0;
+  }
+  function fmtKRW(n) { return "₩" + Math.round(n).toLocaleString("ko-KR"); }
+  function fmtOriginal(e) {
+    const n = e.currency === "KRW" ? e.amount.toLocaleString("ko-KR") : e.amount.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+    return `${n} ${e.currency}`;
+  }
+  function renderExpenses() {
+    const rows = EXPENSES
+      .map(e => ({ ...e, type: classifyExpense(e) }))
+      .filter(e => e.type !== "excluded")
+      .map(e => ({ ...e, share: myShare(e, e.type) }));
+
+    const total = rows.reduce((sum, e) => sum + e.share, 0);
+    const totalEl = document.getElementById("expenseTotal");
+    if (totalEl) totalEl.textContent = fmtKRW(total);
+
+    const byCategory = {};
+    rows.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.share; });
+    const catEl = document.getElementById("expenseCategoryTotals");
+    if (catEl) {
+      catEl.innerHTML = Object.entries(byCategory).map(([cat, sum]) => `
+        <li><div class="item-content"><div class="item-line">
+          <span class="item-title">${cat}</span><span>${fmtKRW(sum)}</span>
+        </div></div></li>`).join("");
+    }
+
+    const bodyEl = document.getElementById("expenseTableBody");
+    if (bodyEl) {
+      bodyEl.innerHTML = rows.map(e => `
+        <tr>
+          <td data-label="일차">${e.day}</td>
+          <td data-label="항목명">${e.item}</td>
+          <td data-label="카테고리">${e.category}</td>
+          <td data-label="금액">${fmtOriginal(e)}${e.currency !== "KRW" ? ` (${fmtKRW(e.amount * e.krwRate)})` : ""}</td>
+          <td data-label="구분"><span class="expense-badge expense-badge-${e.type}">${e.type === "shared" ? "공동" : "개인"}</span></td>
+        </tr>`).join("");
+    }
+  }
+  document.getElementById("expenseDetailBtn")?.addEventListener("click", () => {
+    renderExpenses();
+    document.getElementById("expenseCardBackdrop").hidden = false;
+  });
+
   // ---------------- 지도 (모두에게 동일 - data.js의 TRIP.mapEmbedUrl 고정 사용) ----------------
   function renderMap() {
     const iframe = document.getElementById("mapIframe");
@@ -545,6 +603,12 @@
     if (entrySource === "archive") {
       homeBtn.hidden = false;
       homeBtn.addEventListener("click", () => { location.href = ARCHIVE_URL; });
+      // 가계부는 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
+      const expenseAccordion = document.getElementById("expenseAccordion");
+      if (expenseAccordion) {
+        expenseAccordion.hidden = false;
+        renderExpenses();
+      }
     }
   })();
 
@@ -557,6 +621,7 @@
   bindCardClose("storeCard");
   bindCardClose("shoppingCard");
   bindCardClose("foodCard");
+  bindCardClose("expenseCard");
 
   // ---------------- 초기화 ----------------
   renderTimeline();

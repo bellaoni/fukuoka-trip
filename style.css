@@ -747,6 +747,14 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 }
 
 /* ---------------- 자주쓰는 일본어 카드: 카테고리 구분 헤더 행 ---------------- */
+.expense-total { font-family: 'Shippori Mincho', serif; font-weight: 700; color: var(--indigo-deep); font-size: 15.5px; }
+.expense-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.expense-badge-shared { background: color-mix(in srgb, var(--indigo) 18%, transparent); color: var(--indigo-deep); }
+.expense-badge-personal { background: color-mix(in srgb, var(--pink) 20%, transparent); color: var(--pink-deep); }
+
 .phrase-table tr.phrase-cat td {
   background: var(--paper-raised);
   font-family: 'Shippori Mincho', serif;

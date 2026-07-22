@@ -95,6 +95,20 @@
         </div>
       </details>
 
+      <details class="accordion" id="expenseAccordion" hidden>
+        <summary>💰 가계부</summary>
+        <div class="accordion-body">
+          <div class="quick-card" id="expenseSummaryCard">
+            <div class="quick-card-head">
+              <span class="quick-card-title">총 내 지출액</span>
+              <span class="expense-total" id="expenseTotal">-</span>
+            </div>
+            <p class="hint-text">공동경비는 내 몫만, 개인경비는 전액 반영한 금액이에요.</p>
+            <button class="btn-ghost small" id="expenseDetailBtn" type="button">상세보기</button>
+          </div>
+        </div>
+      </details>
+
       <details class="accordion">
         <summary>설정</summary>
         <div class="accordion-body">
@@ -292,6 +306,27 @@
         <tbody id="storeTableBody"></tbody>
       </table>
       <button class="btn-primary close-bottom" id="storeCardCloseBottom" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 가계부 상세 카드 팝업 (나만 보기, Bella Travel 경유 진입 시에만 열 수 있음) -->
+<div class="viewer-backdrop" id="expenseCardBackdrop" hidden>
+  <div class="modal-sheet small-sheet store-card">
+    <button class="modal-close" id="expenseCardClose" aria-label="닫기">✕</button>
+    <div class="modal-header">
+      <h2>💰 가계부</h2>
+    </div>
+    <div class="modal-body store-body">
+      <ul class="item-list" id="expenseCategoryTotals"></ul>
+      <hr class="washi-divider">
+      <table class="store-table expense-table" id="expenseTable">
+        <thead>
+          <tr><th>일차</th><th>항목명</th><th>카테고리</th><th>금액</th><th>구분</th></tr>
+        </thead>
+        <tbody id="expenseTableBody"></tbody>
+      </table>
+      <button class="btn-primary close-bottom" id="expenseCardCloseBottom" type="button">닫기</button>
     </div>
   </div>
 </div>

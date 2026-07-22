@@ -240,6 +240,23 @@ const SHOPPING_LIST = [
   ]},
 ];
 
+// ---------------- 가계부 (나만 보기 전용, Bella Travel 경유 진입 시에만 노출) ----------------
+// 외부 가계부 앱(엑셀/CSV)에서 내보낸 원본 내역을 그대로 옮겨 적는 용도.
+// splitWith: 나눠 낼 사람(들). 공동/개인 여부는 splitWith.length로 자동 판단함 (app.js 참고)
+//   - splitWith 인원이 2명 이상 → 공동경비 (금액을 인원수로 나눈 값이 내 몫)
+//   - splitWith 인원이 1명이고 그게 "나"(ME_NAME) → 개인경비 (전액 내 몫)
+//   - splitWith 인원이 1명인데 내가 아니면 → 내 가계부에서 제외 (타인 단독 경비)
+const ME_NAME = "동녘하늘노을";
+
+const EXPENSES = [
+  { day: "여행준비", item: "항공권 왕복-제주항공", category: "항공", amount: 640000, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+  { day: "여행준비", item: "호텔 2박-여기어때 예약", category: "숙소", amount: 210000, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+  { day: "여행준비", item: "스이카 충전", category: "교통", amount: 1000, currency: "JPY", krwRate: 9.4888, splitWith: ["동녘하늘노을"] },
+  { day: "여행준비", item: "엄마 2기가 이심", category: "기타", amount: 3900, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+  { day: "여행준비", item: "클룩 무제한 이심", category: "기타", amount: 7548, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+  { day: "여행준비", item: "여행자보험2인 - 현대해상", category: "기타", amount: 5500, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+];
+
 // ---------------- 참고정보: 꼭 먹어야 할 음식 (간식은 구매처별로 분류) ----------------
 const FOOD_LIST = [
   { group: "🍽️ 식사", items: [
