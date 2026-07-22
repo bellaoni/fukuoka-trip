@@ -364,8 +364,12 @@
     // 카테고리별로 묶고, 카테고리 안에서는 일차 순서를 유지한 채 그룹핑
     const categories = {};
     rows.forEach(e => {
-      if (!categories[e.category]) categories[e.category] = { total: 0, rows: [] };
+      if (!categories[e.category]) categories[e.category] = { total: 0, currencyTotals: {}, rows: [] };
       categories[e.category].total += e.share;
+      if (e.currency !== "KRW") {
+        const shareOriginal = e.type === "shared" ? e.amount / e.splitWith.length : e.amount;
+        categories[e.category].currencyTotals[e.currency] = (categories[e.category].currencyTotals[e.currency] || 0) + shareOriginal;
+      }
       categories[e.category].rows.push(e);
     });
 
@@ -387,9 +391,12 @@
               <td><span class="expense-badge expense-badge-${e.type}">${e.type === "shared" ? "공동" : "개인"}</span>${shareNote}</td>
             </tr>`;
         }).join("");
+        const currencyNote = Object.entries(data.currencyTotals)
+          .map(([cur, sum]) => `${cur} ${sum.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}`)
+          .join(" · ");
         return `
           <details class="accordion accordion-nested">
-            <summary><span>${cat}</span><span class="expense-cat-total">${fmtKRW(data.total)}</span></summary>
+            <summary><span>${cat}</span><span class="expense-cat-total">${fmtKRW(data.total)}${currencyNote ? `<br><span class="expense-currency-note">(${currencyNote})</span>` : ""}</span></summary>
             <div class="accordion-body">
               <table class="phrase-table expense-table">
                 <thead><tr><th>항목명</th><th>금액</th><th>구분</th></tr></thead>
