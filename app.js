@@ -352,32 +352,52 @@
     const rows = EXPENSES
       .map(e => ({ ...e, type: classifyExpense(e) }))
       .filter(e => e.type !== "excluded")
-      .map(e => ({ ...e, share: myShare(e, e.type) }));
+      .map(e => ({ ...e, krw: e.amount * e.krwRate, share: myShare(e, e.type) }));
 
-    const total = rows.reduce((sum, e) => sum + e.share, 0);
-    const totalEl = document.getElementById("expenseTotal");
-    if (totalEl) totalEl.textContent = fmtKRW(total);
+    const totalMine = rows.reduce((sum, e) => sum + e.share, 0);
+    const totalShared = rows.filter(e => e.type === "shared").reduce((sum, e) => sum + e.krw, 0);
+    const mineEl = document.getElementById("expenseTotal");
+    const sharedEl = document.getElementById("expenseSharedTotal");
+    if (mineEl) mineEl.textContent = fmtKRW(totalMine);
+    if (sharedEl) sharedEl.textContent = fmtKRW(totalShared);
 
-    const byCategory = {};
-    rows.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.share; });
-    const catEl = document.getElementById("expenseCategoryTotals");
-    if (catEl) {
-      catEl.innerHTML = Object.entries(byCategory).map(([cat, sum]) => `
-        <li><div class="item-content"><div class="item-line">
-          <span class="item-title">${cat}</span><span>${fmtKRW(sum)}</span>
-        </div></div></li>`).join("");
-    }
+    // 카테고리별로 묶고, 카테고리 안에서는 일차 순서를 유지한 채 그룹핑
+    const categories = {};
+    rows.forEach(e => {
+      if (!categories[e.category]) categories[e.category] = { total: 0, rows: [] };
+      categories[e.category].total += e.share;
+      categories[e.category].rows.push(e);
+    });
 
-    const bodyEl = document.getElementById("expenseTableBody");
-    if (bodyEl) {
-      bodyEl.innerHTML = rows.map(e => `
-        <tr>
-          <td data-label="일차">${e.day}</td>
-          <td data-label="항목명">${e.item}</td>
-          <td data-label="카테고리">${e.category}</td>
-          <td data-label="금액">${fmtOriginal(e)}${e.currency !== "KRW" ? ` (${fmtKRW(e.amount * e.krwRate)})` : ""}</td>
-          <td data-label="구분"><span class="expense-badge expense-badge-${e.type}">${e.type === "shared" ? "공동" : "개인"}</span></td>
-        </tr>`).join("");
+    const listEl = document.getElementById("expenseCategoryList");
+    if (listEl) {
+      listEl.innerHTML = Object.entries(categories).map(([cat, data]) => {
+        let lastDay = null;
+        const bodyRows = data.rows.map(e => {
+          let dayHeader = "";
+          if (e.day !== lastDay) {
+            dayHeader = `<tr class="phrase-cat"><td colspan="3">${e.day}</td></tr>`;
+            lastDay = e.day;
+          }
+          const shareNote = e.type === "shared" ? `<br><span class="expense-share-note">내 몫 ${fmtKRW(e.share)}</span>` : "";
+          return `${dayHeader}
+            <tr>
+              <td>${e.item}</td>
+              <td>${fmtOriginal(e)}${e.currency !== "KRW" ? `<br>(${fmtKRW(e.krw)})` : ""}</td>
+              <td><span class="expense-badge expense-badge-${e.type}">${e.type === "shared" ? "공동" : "개인"}</span>${shareNote}</td>
+            </tr>`;
+        }).join("");
+        return `
+          <details class="accordion accordion-nested">
+            <summary><span>${cat}</span><span class="expense-cat-total">${fmtKRW(data.total)}</span></summary>
+            <div class="accordion-body">
+              <table class="phrase-table expense-table">
+                <thead><tr><th>항목명</th><th>금액</th><th>구분</th></tr></thead>
+                <tbody>${bodyRows}</tbody>
+              </table>
+            </div>
+          </details>`;
+      }).join("");
     }
   }
   document.getElementById("expenseDetailBtn")?.addEventListener("click", () => {
