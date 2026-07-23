@@ -159,7 +159,7 @@
       <details class="accordion" id="backupAccordion">
         <summary>데이터 백업</summary>
         <div class="accordion-body">
-          <p class="hint-text">사진 · 메모 · 체크리스트를 파일 하나로 저장하거나 불러올 수 있어요. 기기를 바꾸거나 앱을 지우기 전에 내보내기 해두는 걸 추천해요.</p>
+          <p class="hint-text">사진 · 메모 · 체크리스트 · 가계부 금액을 파일 하나로 저장하거나 불러올 수 있어요. 기기를 바꾸거나 앱을 지우기 전에 내보내기 해두는 걸 추천해요.</p>
           <div class="backup-actions">
             <button class="btn-primary small" id="exportBtn" type="button">내보내기</button>
             <label class="btn-ghost small file-btn" for="importFileInput">
@@ -362,6 +362,15 @@
       <p class="modal-subtitle">카테고리를 누르면 세부 항목이 표로 열려요</p>
     </div>
     <div class="modal-body store-body">
+      <div class="backup-actions">
+        <label class="btn-ghost small file-btn" for="expenseCsvInput">
+          CSV로 업데이트
+          <input type="file" id="expenseCsvInput" accept=".csv,text/csv" hidden>
+        </label>
+      </div>
+      <p class="hint-text">CSV를 올리면 현재 가계부 내역 전체가 새 내용으로 교체돼요. 컬럼: day,item,category,amount,currency,krwRate,splitWith (splitWith는 세미콜론으로 여러 명 구분)</p>
+      <p class="hint-text" id="expenseCsvStatus" hidden></p>
+      <div class="washi-divider"></div>
       <div id="expenseCategoryList"></div>
       <button class="btn-primary close-bottom" id="expenseCardCloseBottom" type="button">닫기</button>
     </div>

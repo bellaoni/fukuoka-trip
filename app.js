@@ -6,12 +6,24 @@
   // 허브 레포 이름을 바꾸면 이 값만 수정하면 됨.
   const ARCHIVE_URL = "/bella-travel/";
 
-  const TAG_LABEL = { normal: "일정", food: "맛집", onsen: "온천", shop: "쇼핑", sight: "관광" };
+  const TAG_LABEL = { normal: "일정", food: "맛집", shop: "쇼핑", sight: "관광", theme: "테마/체험" };
 
   let currentDay = 1;
   let currentItem = null; // 현재 모달에 열려있는 item
   const objectUrls = []; // 상세 모달 첨부용 blob object URL 추적 (해제용)
   let isArchiveEntry = false; // Bella Travel을 거쳐 들어왔는지 여부 (나만 보기 전용 기능 노출 판단용)
+
+  // 가계부 데이터: 기본값은 data.js의 EXPENSES(시드). CSV로 한 번이라도 업데이트하면
+  // 이후로는 IndexedDB에 저장된 값을 우선 사용한다. (백업 JSON에도 이 값이 포함됨)
+  let currentExpenses = EXPENSES;
+  async function loadExpenses() {
+    try {
+      const stored = await DB.getExpenses();
+      if (Array.isArray(stored)) currentExpenses = stored;
+    } catch (e) {
+      // DB 접근 실패 시 data.js 기본값을 그대로 사용
+    }
+  }
 
   // ---------------- 공용: HTML 이스케이프 ----------------
   // 사용자가 직접 타이핑한 값(체크리스트, 메모 등)을 innerHTML에 꽂기 전에 반드시 거쳐서
@@ -386,7 +398,7 @@
   function fmtKRW(n) { return formatMoney(Math.round(n), "KRW"); }
   function fmtOriginal(e) { return formatMoney(e.amount, e.currency); }
   function renderExpenses() {
-    const rows = EXPENSES
+    const rows = currentExpenses
       .map(e => ({ ...e, type: classifyExpense(e) }))
       .filter(e => e.type !== "excluded")
       .map(e => ({ ...e, krw: e.amount * e.krwRate, share: myShare(e, e.type) }));
@@ -449,11 +461,64 @@
     openCard("expenseCard");
   });
 
+  // ---------------- 가계부 CSV 업로드 (전체 교체) ----------------
+  // 컬럼: day,item,category,amount,currency,krwRate,splitWith
+  // splitWith는 세미콜론(;)으로 여러 명을 구분한다. 분류(공동/개인/제외) 로직인
+  // classifyExpense/myShare는 그대로 사용하므로 이 CSV 스펙만 지키면 기존 규칙이 그대로 적용된다.
+  function parseExpenseCsv(text) {
+    const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(l => l.trim() !== "");
+    if (lines.length < 2) throw new Error("빈 CSV예요.");
+    const header = lines[0].split(",").map(h => h.trim());
+    const required = ["day", "item", "category", "amount", "currency", "krwRate", "splitWith"];
+    for (const col of required) {
+      if (!header.includes(col)) throw new Error(`컬럼 누락: ${col}`);
+    }
+    return lines.slice(1).map((line, i) => {
+      const cells = line.split(",").map(c => c.trim());
+      const row = {};
+      header.forEach((h, idx) => { row[h] = cells[idx] ?? ""; });
+      const amount = Number(row.amount);
+      const krwRate = Number(row.krwRate);
+      if (!row.item || Number.isNaN(amount) || Number.isNaN(krwRate)) {
+        throw new Error(`${i + 2}번째 줄 형식이 올바르지 않아요.`);
+      }
+      return {
+        day: row.day,
+        item: row.item,
+        category: row.category,
+        amount,
+        currency: row.currency || "KRW",
+        krwRate,
+        splitWith: row.splitWith.split(";").map(s => s.trim()).filter(Boolean)
+      };
+    });
+  }
+
+  document.getElementById("expenseCsvInput")?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const statusEl = document.getElementById("expenseCsvStatus");
+    const showCsvStatus = (msg) => { if (statusEl) { statusEl.textContent = msg; statusEl.hidden = false; } };
+
+    if (!confirm("CSV를 올리면 현재 가계부 내역 전체가 새 내용으로 교체돼요. 계속할까요?")) return;
+    try {
+      const text = await file.text();
+      const rows = parseExpenseCsv(text);
+      await DB.replaceExpenses(rows);
+      currentExpenses = rows;
+      renderExpenses();
+      showCsvStatus(`✅ ${rows.length}건으로 교체 완료 (${new Date().toLocaleString("ko-KR")})`);
+    } catch (err) {
+      showCsvStatus(`⚠️ 가져오기 실패: ${err.message || "CSV 형식을 확인해 주세요."}`);
+    }
+  });
+
   // ---------------- 지도 (Leaflet + OpenStreetMap) ----------------
   // 흐름: GEO_COORDS(확정 좌표, data.js)에 있으면 그걸 바로 사용 → 없으면 mapQuery(+영문 검색어)로
   // Nominatim 지오코딩 시도 → 성공하면 기기에 캐시. 실패한 장소는 지도에서 빼지 않고 "위치 확인 필요"
   // 목록에 남겨, 지도를 탭해서 직접 위치를 찍어 저장할 수 있게 한다(좌표 입력 없이).
-  const TAG_COLOR_VAR = { food: "var(--pink)", onsen: "var(--moss)", shop: "var(--indigo)", sight: "var(--sight)" };
+  const TAG_COLOR_VAR = { normal: "var(--tape)", food: "var(--pink)", shop: "var(--sight)", sight: "var(--moss)", theme: "var(--indigo)" };
   function tagColorVar(tag) { return TAG_COLOR_VAR[tag] || "var(--tape)"; }
 
   let leafletMap = null;
@@ -572,7 +637,7 @@
     const el = document.getElementById("mapLegend");
     if (!el) return;
     const present = new Set(ITEMS.filter((i) => i.mapQuery).map((i) => i.tag));
-    const order = ["normal", "food", "sight", "onsen", "shop"];
+    const order = ["normal", "food", "sight", "shop", "theme"];
     const tags = order.filter((t) => present.has(t)).concat([...present].filter((t) => !order.includes(t)));
     el.innerHTML = tags.map((tag) => `
       <span class="map-legend-item"><span class="map-legend-dot" style="background:${tagColorVar(tag)}"></span>${TAG_LABEL[tag] || tag}</span>
@@ -863,6 +928,7 @@
     const btn = document.getElementById("exportBtn");
     btn.disabled = true;
     try {
+      await loadExpenses();
       const [notes, checklist, rawAttachments, geocodes] = await Promise.all([
         DB.getAllNotes(),
         DB.getChecklist(),
@@ -879,9 +945,10 @@
       })));
       const payload = {
         app: (window.TRIP_ID || "fukuoka-trip") + "-pwa",
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
-        notes, checklist, attachments, geocodes
+        notes, checklist, attachments, geocodes,
+        expenses: currentExpenses
       };
       const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -906,7 +973,7 @@
     e.target.value = "";
     if (!file) return;
 
-    if (!confirm("백업 파일을 불러오면 현재 저장된 메모·사진·체크리스트 위에 덮어써요. 계속할까요?")) return;
+    if (!confirm("백업 파일을 불러오면 현재 저장된 메모·사진·체크리스트·가계부 위에 덮어써요. 계속할까요?")) return;
 
     try {
       const text = await file.text();
@@ -931,6 +998,11 @@
       }
       for (const [query, record] of Object.entries(payload.geocodes || {})) {
         await DB.setGeocode(query, record);
+      }
+      if (Array.isArray(payload.expenses)) {
+        await DB.replaceExpenses(payload.expenses);
+        currentExpenses = payload.expenses;
+        renderExpenses();
       }
 
       showBackupStatus(`✅ 가져오기 완료 (${new Date().toLocaleString("ko-KR")})`);
@@ -991,7 +1063,7 @@
       const expenseAccordion = document.getElementById("expenseAccordion");
       if (expenseAccordion) {
         expenseAccordion.hidden = false;
-        renderExpenses();
+        loadExpenses().then(renderExpenses);
       }
       // 지도 좌표 복사도 나만 보기 전용 - 공유자에게는 의미 없는 개발용 기능
       const geoCopySection = document.getElementById("geoCopySection");

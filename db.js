@@ -3,7 +3,7 @@ const DB = (() => {
   // index.html 맨 위 인라인 스크립트에서 정의한 window.TRIP_ID로 DB 이름을 만든다.
   // 같은 GitHub Pages 도메인의 다른 여행 앱과 IndexedDB가 섞이지 않게 하는 핵심 값.
   const DB_NAME = (window.TRIP_ID || "fukuoka-trip") + "-db";
-  const DB_VERSION = 2;
+  const DB_VERSION = 3;
   let dbPromise = null;
 
   function open() {
@@ -24,6 +24,9 @@ const DB = (() => {
         }
         if (!db.objectStoreNames.contains("geocache")) {
           db.createObjectStore("geocache"); // key: mapQuery 문자열, value: {lat,lng,manual,failed,ts}
+        }
+        if (!db.objectStoreNames.contains("expenses")) {
+          db.createObjectStore("expenses"); // key: 'list', value: array (가계부, CSV 업로드 시 통째로 교체)
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -160,6 +163,23 @@ const DB = (() => {
       const store = await tx("geocache", "readwrite");
       return new Promise((res, rej) => {
         const r = store.put(record, query);
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
+    },
+    // ---- 가계부 (CSV 업로드 시 전체 교체 방식) ----
+    async getExpenses() {
+      const store = await tx("expenses", "readonly");
+      return new Promise((res, rej) => {
+        const r = store.get("list");
+        r.onsuccess = () => res(r.result || null); // null이면 아직 시드 전 (data.js 값을 씀)
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async replaceExpenses(list) {
+      const store = await tx("expenses", "readwrite");
+      return new Promise((res, rej) => {
+        const r = store.put(list, "list");
         r.onsuccess = () => res();
         r.onerror = () => rej(r.error);
       });

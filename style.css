@@ -221,10 +221,11 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   border-radius: 2px;
   box-shadow: 0 2px 3px rgba(0,0,0,0.08);
 }
+.tl-card.tag-normal::before { background: var(--tape); opacity: .85; }
 .tl-card.tag-food::before { background: var(--pink); opacity: .8; }
-.tl-card.tag-onsen::before { background: var(--moss); opacity: .75; }
-.tl-card.tag-shop::before { background: var(--indigo); opacity: .55; }
-.tl-card.tag-sight::before { background: var(--sight); opacity: .8; }
+.tl-card.tag-shop::before { background: var(--sight); opacity: .55; }
+.tl-card.tag-sight::before { background: var(--moss); opacity: .8; }
+.tl-card.tag-theme::before { background: var(--indigo); opacity: .7; }
 
 .tl-card-head {
   display: flex;
