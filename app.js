@@ -517,7 +517,7 @@
           </div>
         </div>
         <form class="map-pending-form" data-id="${item.id}">
-          <input type="text" placeholder="위도,경도 또는 구글맵 URL 붙여넣기" autocomplete="off">
+          <input type="text" placeholder="위도,경도 (예: 33.5897,130.4206)" autocomplete="off">
           <button type="submit" class="btn-primary small">저장</button>
         </form>
       </li>`).join("");
@@ -572,7 +572,8 @@
   }
 
   async function geocodeNominatim(query) {
-    const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=" + encodeURIComponent(query);
+    const searchText = GEO_SEARCH_QUERY[query] || query;
+    const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=" + encodeURIComponent(searchText);
     const res = await fetch(url);
     if (!res.ok) throw new Error("geocode failed");
     const data = await res.json();
@@ -605,7 +606,7 @@
     ensureLeafletMap();
     leafletMap.invalidateSize();
 
-    const withQuery = ITEMS.filter((i) => i.mapQuery);
+    const withQuery = ITEMS.filter((i) => i.mapQuery && !i.noPin);
     const byQuery = new Map();
     withQuery.forEach((item) => {
       if (!byQuery.has(item.mapQuery)) byQuery.set(item.mapQuery, []);
@@ -617,6 +618,11 @@
     const toGeocode = [];
 
     for (const [query, items] of byQuery.entries()) {
+      const fixed = GEO_COORDS[query];
+      if (fixed) {
+        items.forEach((item) => addMarkerForItem(item, fixed));
+        continue;
+      }
       const cached = await DB.getGeocode(query);
       if (cached && !cached.failed) {
         items.forEach((item) => addMarkerForItem(item, cached));
@@ -833,6 +839,28 @@
     } catch (err) {
       showBackupStatus("⚠️ 가져오기에 실패했어요. 올바른 백업 파일인지 확인해 주세요.");
     }
+  });
+
+  document.getElementById("exportGeoBtn")?.addEventListener("click", async () => {
+    const statusEl = document.getElementById("geoExportStatus");
+    const all = await DB.getAllGeocodes();
+    const lines = Object.entries(all)
+      .filter(([query, rec]) => rec && !rec.failed && !(query in GEO_COORDS))
+      .map(([query, rec]) => `  "${query.replace(/"/g, "\\\"")}": { lat: ${rec.lat}, lng: ${rec.lng} },`);
+
+    if (!lines.length) {
+      statusEl.textContent = "새로 추가할 좌표가 없어요. (이미 다 GEO_COORDS에 있거나, 아직 확인된 곳이 없어요)";
+      statusEl.hidden = false;
+      return;
+    }
+    const snippet = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(snippet);
+      statusEl.textContent = `✅ ${lines.length}곳 좌표를 복사했어요. Claude에게 붙여넣어서 GEO_COORDS에 반영해달라고 하면 돼요.`;
+    } catch (e) {
+      statusEl.textContent = snippet; // 클립보드 접근 실패 시 화면에 직접 표시해서 수동으로 복사 가능하게
+    }
+    statusEl.hidden = false;
   });
 
   // ---------------- 진입 경로 확인 (Bella Travel 아카이브 연동) ----------------

@@ -1,5 +1,39 @@
 // 엄마랑 후쿠오카 2박 3일 일정 데이터
-// tag: normal | food | onsen | shop  (워시테이프 색상에 사용)
+// tag: normal | food | onsen | shop | sight  (워시테이프 색상에 사용)
+
+// ---------------- 지도 좌표 (확정본) ----------------
+// mapQuery 텍스트를 키로 사용. 여기 등록된 곳은 기기/캐시와 무관하게 항상 이 좌표를 그대로 써서
+// 모든 기기(내 폰/아이패드/어머니 폰)에서 동일하게 보인다 - 공유 시 각자 수동으로 다시 찾을 필요 없음.
+// 일정 수정으로 mapQuery 문구 자체가 바뀌면, 그 새 문구는 여기 없으니 앱이 자동으로 다시 지오코딩을 시도한다.
+// 다른 여행 데이터에서도 이 구조(GEO_COORDS/GEO_SEARCH_QUERY) 그대로 복사해서 재사용 가능.
+const GEO_COORDS = {
+  "김해국제공항": { lat: 35.1794, lng: 128.9383 },
+  "후쿠오카 공항": { lat: 33.5844, lng: 130.4517 },
+  "하카타역": { lat: 33.5897, lng: 130.4206 },
+  "하카타역 코인로커": { lat: 33.5897, lng: 130.4206 },
+  "텐진역": { lat: 33.5888, lng: 130.3999 },
+  "텐진 지하상가": { lat: 33.5888, lng: 130.3999 },
+  "스미요시 신사 후쿠오카": { lat: 33.5859, lng: 130.4137 },
+  "라쿠스이엔 후쿠오카": { lat: 33.5871, lng: 130.4139 },
+  "캐널시티 하카타": { lat: 33.5897, lng: 130.4113 },
+  "아뮤플라자 하카타": { lat: 33.5895, lng: 130.4198 },
+  "나카스 강변 후쿠오카": { lat: 33.5940, lng: 130.4082 },
+  "나카스 야타이": { lat: 33.5945, lng: 130.4090 }
+};
+
+// 위 GEO_COORDS에 없는 곳(대부분 특정 매장·지점) 중, 한국어 mapQuery로는 OSM 검색이 잘 안 되는
+// 곳들을 위한 영문/현지어 검색어. 자동 지오코딩 시도할 때 이 문구를 우선 사용한다.
+// (그래도 실패하면 지도에서 빼지 않고 "위치 확인 필요" 목록에 남겨 수동 확정을 기다림)
+const GEO_SEARCH_QUERY = {
+  "후쿠오카 공항 국제선터미널": "Fukuoka Airport International Terminal",
+  "프린스 스마트인 하카타": "Prince Smart Inn Hakata",
+  "REC COFFEE 하카타마루이": "REC COFFEE Hakata Marui",
+  "블루보틀 커피 후쿠오카 텐진점": "Blue Bottle Coffee Tenjin Fukuoka",
+  "스시사카바 사시스 KITTE하카타점": "Sushi Sakaba Sashisu KITTE Hakata",
+  "원조 모츠나베 라쿠텐치 하카타역점": "Motsunabe Rakutenchi Hakata Station",
+  "키와미야 함바그 하카타점": "Kiwamiya Hamburg Hakata",
+  "하카타규마부시 무사시 텐진점": "Hakata Gyumanbushi Musashi Tenjin"
+};
 
 const TRIP = {
   title: "엄마랑 후쿠오카 2박 3일",
@@ -53,6 +87,7 @@ const ITEMS = [
     title: "카페 · 신발 벗고 편안하게",
     desc: "일본 감성 가득한 다다미 카페에서 여유 타임",
     mapQuery: "하카타 카페" ,
+    noPin: true, // 특정 매장이 아닌 그날 마음에 드는 곳으로 자유 선택 → 지도에 고정 핀을 찍지 않음
     remark: "" },
   { id: "d1-7", day: 1, time: "18:30", tag: "shop",
     title: "캐널시티 하카타",
