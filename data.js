@@ -4,8 +4,6 @@
 const TRIP = {
   title: "엄마랑 후쿠오카 2박 3일",
   hotel: "프린스 스마트인 하카타 (하카타역 도보 5분)",
-  // 마이맵 embed 링크 - 여기 값을 바꾸면 모든 기기(폰/아이패드/동행자)에서 동일하게 보임
-  mapEmbedUrl: "https://www.google.com/maps/d/embed?mid=1HCObB6k8sQUzeuHVu9o_LDUuGEkl29M&ehbc=2E312F&noprof=1",
   flights: [
     {
       route: "부산김해 → 후쿠오카",
@@ -61,7 +59,7 @@ const ITEMS = [
     desc: "분수쇼 & 쇼핑 & 산책",
     mapQuery: "캐널시티 하카타" ,
     remark: "" },
-  { id: "d1-8", day: 1, time: "19:30", tag: "normal",
+  { id: "d1-8", day: 1, time: "19:30", tag: "sight",
     title: "나카스 강변 산책",
     desc: "여름 축제(마쓰리) 분위기 구경 🎐 여행 기간엔 텐진·하카타 일대에서 야시장 분위기도 즐길 수 있어요",
     mapQuery: "나카스 강변 후쿠오카" ,
@@ -78,12 +76,12 @@ const ITEMS = [
     desc: "",
     mapQuery: "프린스 스마트인 하카타" ,
     remark: "" },
-  { id: "d2-2", day: 2, time: "09:30", tag: "normal",
+  { id: "d2-2", day: 2, time: "09:30", tag: "sight",
     title: "스미요시 신사",
     desc: "조용하고 아름다운 신사",
     mapQuery: "스미요시 신사 후쿠오카" ,
     remark: "" },
-  { id: "d2-3", day: 2, time: "10:10", tag: "normal",
+  { id: "d2-3", day: 2, time: "10:10", tag: "sight",
     title: "라쿠스이엔",
     desc: "일본 정원 산책 & 말차 타임",
     mapQuery: "라쿠스이엔 후쿠오카" ,

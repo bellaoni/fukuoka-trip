@@ -6,7 +6,7 @@
   // 허브 레포 이름을 바꾸면 이 값만 수정하면 됨.
   const ARCHIVE_URL = "/bella-travel/";
 
-  const TAG_LABEL = { normal: "일정", food: "맛집", onsen: "온천", shop: "쇼핑" };
+  const TAG_LABEL = { normal: "일정", food: "맛집", onsen: "온천", shop: "쇼핑", sight: "관광" };
 
   let currentDay = 1;
   let currentItem = null; // 현재 모달에 열려있는 item
@@ -417,11 +417,228 @@
     document.getElementById("expenseCardBackdrop").hidden = false;
   });
 
-  // ---------------- 지도 (모두에게 동일 - data.js의 TRIP.mapEmbedUrl 고정 사용) ----------------
-  function renderMap() {
-    const iframe = document.getElementById("mapIframe");
-    if (TRIP.mapEmbedUrl) iframe.src = TRIP.mapEmbedUrl;
+  // ---------------- 지도 (Leaflet + OpenStreetMap, 좌표는 기기에 캐시) ----------------
+  // 흐름: mapQuery(장소명)로 Nominatim 지오코딩 → 성공하면 IndexedDB(geocache)에 저장해
+  // 다음부턴 재조회 없이 바로 사용. 실패한 장소는 지도에서 빼지 않고 하단 목록에 남겨
+  // 구글 지도 링크 + 좌표 직접 입력(수동 지정)으로 채울 수 있게 한다.
+  const TAG_COLOR_VAR = { food: "var(--pink)", onsen: "var(--moss)", shop: "var(--indigo)", sight: "var(--sight)" };
+  function tagColorVar(tag) { return TAG_COLOR_VAR[tag] || "var(--tape)"; }
+
+  let leafletMap = null;
+  let mapMarkerLayers = null; // { 1: layerGroup, 2: layerGroup, 3: layerGroup }
+  let currentMapDay = "all";
+  let mapInitialized = false;
+  let geocodeQueueRunning = false;
+
+  function makePinIcon(tag) {
+    return L.divIcon({
+      className: "map-pin-wrap",
+      html: `<span class="map-pin" style="background:${tagColorVar(tag)}"></span>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8]
+    });
   }
+
+  function addMarkerForItem(item, coords) {
+    const marker = L.marker([coords.lat, coords.lng], { icon: makePinIcon(item.tag) });
+    marker.bindTooltip(item.title, { direction: "top", offset: [0, -6] });
+    marker.on("click", () => openModal(item.id));
+    marker.addTo(mapMarkerLayers[item.day]);
+  }
+
+  function renderMapLegend() {
+    const el = document.getElementById("mapLegend");
+    if (!el) return;
+    const present = new Set(ITEMS.filter((i) => i.mapQuery).map((i) => i.tag));
+    const order = ["normal", "food", "sight", "onsen", "shop"];
+    const tags = order.filter((t) => present.has(t)).concat([...present].filter((t) => !order.includes(t)));
+    el.innerHTML = tags.map((tag) => `
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:${tagColorVar(tag)}"></span>${TAG_LABEL[tag] || tag}</span>
+    `).join("");
+  }
+
+  function ensureLeafletMap() {
+    if (leafletMap) return;
+    leafletMap = L.map("leafletMap", { zoomControl: true }).setView([33.7, 130.2], 8);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(leafletMap);
+    mapMarkerLayers = {
+      1: L.layerGroup().addTo(leafletMap),
+      2: L.layerGroup().addTo(leafletMap),
+      3: L.layerGroup().addTo(leafletMap)
+    };
+    document.querySelectorAll("#mapDayFilter .day-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        applyMapDayFilter(btn.dataset.mapday, true);
+      });
+    });
+    renderMapLegend();
+  }
+
+  function fitToVisibleMarkers() {
+    const visibleLayers = [1, 2, 3]
+      .filter((d) => currentMapDay === "all" || String(d) === currentMapDay)
+      .map((d) => mapMarkerLayers[d]);
+    const markers = visibleLayers.flatMap((g) => g.getLayers());
+    if (!markers.length) return;
+    const group = L.featureGroup(markers);
+    leafletMap.fitBounds(group.getBounds().pad(0.2));
+  }
+
+  function applyMapDayFilter(day, refit) {
+    currentMapDay = day;
+    document.querySelectorAll("#mapDayFilter .day-tab").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.mapday === day);
+    });
+    [1, 2, 3].forEach((d) => {
+      const layer = mapMarkerLayers[d];
+      const show = day === "all" || String(d) === day;
+      if (show && !leafletMap.hasLayer(layer)) layer.addTo(leafletMap);
+      if (!show && leafletMap.hasLayer(layer)) leafletMap.removeLayer(layer);
+    });
+    if (refit) fitToVisibleMarkers();
+  }
+
+  function renderPendingList(pendingItems) {
+    const wrap = document.getElementById("mapPending");
+    const list = document.getElementById("mapPendingList");
+    if (!pendingItems.length) { wrap.hidden = true; list.innerHTML = ""; return; }
+    wrap.hidden = false;
+    list.innerHTML = pendingItems.map((item) => `
+      <li class="map-pending-item" data-id="${item.id}">
+        <div class="map-pending-head">
+          <span>${item.title}</span>
+          <div class="map-pending-actions">
+            <button class="btn-ghost small map-retry-btn" type="button" data-query="${item.mapQuery.replace(/"/g, "&quot;")}">다시 시도</button>
+            <a class="btn-ghost small" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.mapQuery)}" target="_blank" rel="noopener">구글 지도</a>
+          </div>
+        </div>
+        <form class="map-pending-form" data-id="${item.id}">
+          <input type="text" placeholder="위도,경도 또는 구글맵 URL 붙여넣기" autocomplete="off">
+          <button type="submit" class="btn-primary small">저장</button>
+        </form>
+      </li>`).join("");
+
+    list.querySelectorAll(".map-retry-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "확인 중...";
+        const query = btn.dataset.query;
+        const result = await geocodeNominatim(query).catch(() => null);
+        if (result) {
+          await DB.setGeocode(query, { lat: result.lat, lng: result.lng, manual: false, failed: false, ts: Date.now() });
+        } else {
+          await DB.setGeocode(query, { manual: false, failed: true, ts: Date.now() });
+          btn.disabled = false;
+          btn.textContent = "다시 시도";
+        }
+        renderMap();
+      });
+    });
+
+    list.querySelectorAll(".map-pending-form").forEach((form) => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = form.dataset.id;
+        const item = ITEMS.find((i) => i.id === id);
+        const input = form.querySelector("input");
+        const coords = parseCoordsInput(input.value);
+        if (!coords) {
+          input.classList.add("input-error");
+          setTimeout(() => input.classList.remove("input-error"), 1200);
+          return;
+        }
+        await DB.setGeocode(item.mapQuery, { lat: coords.lat, lng: coords.lng, manual: true, failed: false, ts: Date.now() });
+        addMarkerForItem(item, coords);
+        renderMap();
+      });
+    });
+  }
+
+  // "위도,경도" 텍스트 또는 구글 지도 URL(@lat,lng, / !3d..!4d.. 패턴)에서 좌표 추출
+  function parseCoordsInput(raw) {
+    const text = (raw || "").trim();
+    if (!text) return null;
+    let m = text.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    m = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    m = text.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    return null;
+  }
+
+  async function geocodeNominatim(query) {
+    const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=" + encodeURIComponent(query);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("geocode failed");
+    const data = await res.json();
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+
+  // 아직 캐시에 없는 장소들만 순서대로, Nominatim 정책(초당 1건)에 맞춰 천천히 지오코딩한다.
+  async function runGeocodeQueue(queryGroups) {
+    if (geocodeQueueRunning) return;
+    geocodeQueueRunning = true;
+    try {
+      for (const [query, items] of queryGroups) {
+        const result = await geocodeNominatim(query).catch(() => null);
+        if (result) {
+          await DB.setGeocode(query, { lat: result.lat, lng: result.lng, manual: false, failed: false, ts: Date.now() });
+          items.forEach((item) => addMarkerForItem(item, result));
+        } else {
+          await DB.setGeocode(query, { manual: false, failed: true, ts: Date.now() });
+        }
+        await new Promise((r) => setTimeout(r, 1100)); // Nominatim 사용 정책: 초당 1건 이하
+      }
+    } finally {
+      geocodeQueueRunning = false;
+      renderMap();
+    }
+  }
+
+  async function renderMap() {
+    ensureLeafletMap();
+    leafletMap.invalidateSize();
+
+    const withQuery = ITEMS.filter((i) => i.mapQuery);
+    const byQuery = new Map();
+    withQuery.forEach((item) => {
+      if (!byQuery.has(item.mapQuery)) byQuery.set(item.mapQuery, []);
+      byQuery.get(item.mapQuery).push(item);
+    });
+
+    [1, 2, 3].forEach((d) => mapMarkerLayers[d].clearLayers());
+    const pendingItems = [];
+    const toGeocode = [];
+
+    for (const [query, items] of byQuery.entries()) {
+      const cached = await DB.getGeocode(query);
+      if (cached && !cached.failed) {
+        items.forEach((item) => addMarkerForItem(item, cached));
+      } else if (cached && cached.failed) {
+        pendingItems.push(items[0]);
+      } else {
+        toGeocode.push([query, items]);
+      }
+    }
+
+    renderPendingList(pendingItems);
+
+    if (!mapInitialized) {
+      mapInitialized = true;
+      applyMapDayFilter(currentMapDay, true);
+    } else {
+      applyMapDayFilter(currentMapDay, false);
+    }
+
+    if (toGeocode.length) runGeocodeQueue(toGeocode);
+  }
+
 
   // ---------------- 상세 모달 ----------------
   async function openModal(id) {
@@ -539,10 +756,11 @@
     const btn = document.getElementById("exportBtn");
     btn.disabled = true;
     try {
-      const [notes, checklist, rawAttachments] = await Promise.all([
+      const [notes, checklist, rawAttachments, geocodes] = await Promise.all([
         DB.getAllNotes(),
         DB.getChecklist(),
-        DB.getAllAttachments()
+        DB.getAllAttachments(),
+        DB.getAllGeocodes()
       ]);
       const attachments = await Promise.all(rawAttachments.map(async (a) => ({
         id: a.id,
@@ -554,9 +772,9 @@
       })));
       const payload = {
         app: "fukuoka-trip-pwa",
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
-        notes, checklist, attachments
+        notes, checklist, attachments, geocodes
       };
       const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -604,9 +822,13 @@
           type: att.type, blob, createdAt: att.createdAt
         });
       }
+      for (const [query, record] of Object.entries(payload.geocodes || {})) {
+        await DB.setGeocode(query, record);
+      }
 
       showBackupStatus(`✅ 가져오기 완료 (${new Date().toLocaleString("ko-KR")})`);
       renderChecklist();
+      if (leafletMap) renderMap();
       if (currentItem) await renderAttachments(currentItem.id);
     } catch (err) {
       showBackupStatus("⚠️ 가져오기에 실패했어요. 올바른 백업 파일인지 확인해 주세요.");
@@ -654,6 +876,25 @@
   bindCardClose("shoppingCard");
   bindCardClose("foodCard");
   bindCardClose("expenseCard");
+
+  // ---------------- 아코디언 열림/닫힘 상태 기억 ----------------
+  // 사용자가 마지막으로 펼치거나 접어둔 상태를 기기에 저장해두고, 다음 접속(새로고침 포함) 시 그대로 복원한다.
+  // 저장된 상태가 없는 아코디언은 기본값(닫힘)으로 시작한다.
+  const ACCORDION_STATE_KEY = "fukuoka-trip-accordion-state";
+  (function initAccordionMemory() {
+    let states = {};
+    try { states = JSON.parse(localStorage.getItem(ACCORDION_STATE_KEY)) || {}; } catch (e) {}
+
+    document.querySelectorAll(".checklist-panel > details.accordion[id]").forEach((el) => {
+      if (Object.prototype.hasOwnProperty.call(states, el.id)) {
+        el.open = states[el.id];
+      }
+      el.addEventListener("toggle", () => {
+        states[el.id] = el.open;
+        try { localStorage.setItem(ACCORDION_STATE_KEY, JSON.stringify(states)); } catch (e) {}
+      });
+    });
+  })();
 
   // ---------------- 초기화 ----------------
   renderTimeline();

@@ -1,7 +1,7 @@
 // 간단한 IndexedDB 래퍼. 오프라인에서도 동작하며 사진/PDF는 Blob으로 저장한다.
 const DB = (() => {
   const DB_NAME = "fukuoka-trip-db";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   let dbPromise = null;
 
   function open() {
@@ -19,6 +19,9 @@ const DB = (() => {
         }
         if (!db.objectStoreNames.contains("checklist")) {
           db.createObjectStore("checklist"); // key: 'list', value: array
+        }
+        if (!db.objectStoreNames.contains("geocache")) {
+          db.createObjectStore("geocache"); // key: mapQuery 문자열, value: {lat,lng,manual,failed,ts}
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -140,6 +143,40 @@ const DB = (() => {
         const r = store.put(record);
         r.onsuccess = () => res();
         r.onerror = () => rej(r.error);
+      });
+    },
+    // ---- 지도 지오코딩 캐시 ----
+    async getGeocode(query) {
+      const store = await tx("geocache", "readonly");
+      return new Promise((res, rej) => {
+        const r = store.get(query);
+        r.onsuccess = () => res(r.result || null);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async setGeocode(query, record) {
+      const store = await tx("geocache", "readwrite");
+      return new Promise((res, rej) => {
+        const r = store.put(record, query);
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async getAllGeocodes() {
+      const store = await tx("geocache", "readonly");
+      return new Promise((res, rej) => {
+        const result = {};
+        const cursorReq = store.openCursor();
+        cursorReq.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            result[cursor.key] = cursor.value;
+            cursor.continue();
+          } else {
+            res(result);
+          }
+        };
+        cursorReq.onerror = () => rej(cursorReq.error);
       });
     }
   };
