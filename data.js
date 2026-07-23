@@ -18,22 +18,22 @@ const GEO_COORDS = {
   "캐널시티 하카타": { lat: 33.5897, lng: 130.4113 },
   "아뮤플라자 하카타": { lat: 33.5895, lng: 130.4198 },
   "나카스 강변 후쿠오카": { lat: 33.5940, lng: 130.4082 },
-  "나카스 야타이": { lat: 33.5945, lng: 130.4090 }
+  "나카스 야타이": { lat: 33.5945, lng: 130.4090 },
+  "REC COFFEE 하카타마루이": { lat: 33.58899496, lng: 130.4194512 },
+  "블루보틀 커피 후쿠오카 텐진점": { lat: 33.5873921, lng: 130.3995961 },
+  "스시사카바 사시스 KITTE하카타점": { lat: 33.5888887, lng: 130.4194425 },
+  "원조 모츠나베 라쿠텐치 하카타역점": { lat: 33.588802521359085, lng: 130.4159787297249 },
+  "키와미야 함바그 하카타점": { lat: 33.59171820269285, lng: 130.41978746652606 },
+  "프린스 스마트인 하카타": { lat: 33.5884449, lng: 130.4159122 },
+  "하카타규마부시 무사시 텐진점": { lat: 33.587065537061335, lng: 130.4000097513199 },
+  "후쿠오카 공항 국제선터미널": { lat: 33.5844, lng: 130.4517 }
 };
 
 // 위 GEO_COORDS에 없는 곳(대부분 특정 매장·지점) 중, 한국어 mapQuery로는 OSM 검색이 잘 안 되는
 // 곳들을 위한 영문/현지어 검색어. 자동 지오코딩 시도할 때 이 문구를 우선 사용한다.
 // (그래도 실패하면 지도에서 빼지 않고 "위치 확인 필요" 목록에 남겨 수동 확정을 기다림)
-const GEO_SEARCH_QUERY = {
-  "후쿠오카 공항 국제선터미널": "Fukuoka Airport International Terminal",
-  "프린스 스마트인 하카타": "Prince Smart Inn Hakata",
-  "REC COFFEE 하카타마루이": "REC COFFEE Hakata Marui",
-  "블루보틀 커피 후쿠오카 텐진점": "Blue Bottle Coffee Tenjin Fukuoka",
-  "스시사카바 사시스 KITTE하카타점": "Sushi Sakaba Sashisu KITTE Hakata",
-  "원조 모츠나베 라쿠텐치 하카타역점": "Motsunabe Rakutenchi Hakata Station",
-  "키와미야 함바그 하카타점": "Kiwamiya Hamburg Hakata",
-  "하카타규마부시 무사시 텐진점": "Hakata Gyumanbushi Musashi Tenjin"
-};
+// 지금까지 실패했던 곳은 전부 위 GEO_COORDS에 확정 좌표로 반영되어 현재는 비어있음.
+const GEO_SEARCH_QUERY = {};
 
 const TRIP = {
   title: "엄마랑 후쿠오카 2박 3일",

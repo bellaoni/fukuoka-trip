@@ -22,6 +22,23 @@
     }[ch]));
   }
 
+  // ---------------- 공용: 팝업 카드 열기/닫기 포커스 관리 ----------------
+  // bella-travel 허브의 통계 모달과 동일한 방식: 열 때 닫기버튼(X)으로 포커스를 옮기고,
+  // 닫을 때 팝업을 열기 전 포커스가 있던 요소로 되돌린다(lastFocusedEl).
+  // 한 번에 하나의 팝업만 열린다는 전제로 전역 변수 하나로 관리한다.
+  let lastFocusedEl = null;
+
+  // "{prefix}Backdrop" / "{prefix}Close"라는 id 규칙만 지키면 어떤 팝업이든
+  // 열기 전 포커스 저장 → 배경 노출 → 닫기 버튼 포커스까지 한 줄로 처리해준다.
+  function openCard(prefix) {
+    lastFocusedEl = document.activeElement;
+    const backdrop = document.getElementById(prefix + "Backdrop");
+    if (!backdrop) return;
+    backdrop.hidden = false;
+    const closeBtn = document.getElementById(prefix + "Close");
+    if (closeBtn) closeBtn.focus();
+  }
+
   // ---------------- 공용: 팝업 카드 닫기 바인딩 ----------------
   // "{prefix}Backdrop" / "{prefix}Close" / "{prefix}CloseBottom" 이라는 id 규칙만 지키면
   // 어떤 팝업(모달/뷰어/각종 참고정보 카드)이든 닫기 버튼 3종(상단 X · 하단 버튼 · 배경 클릭)을
@@ -32,6 +49,10 @@
     if (!backdrop) return;
     const doClose = () => {
       backdrop.hidden = true;
+      if (lastFocusedEl && typeof lastFocusedEl.focus === "function") {
+        lastFocusedEl.focus(); // 팝업을 열기 전 포커스가 있던 요소로 되돌림
+      }
+      lastFocusedEl = null;
       if (onClose) onClose();
     };
     const closeBtn = document.getElementById(prefix + "Close");
@@ -240,19 +261,19 @@
 
   function openReferenceCard(id) {
     if (id === "ref-airport-station") {
-      document.getElementById("transitCardBackdrop").hidden = false;
+      openCard("transitCard");
     } else if (id === "ref-japanese-phrases") {
       renderPhraseTable();
-      document.getElementById("phraseCardBackdrop").hidden = false;
+      openCard("phraseCard");
     } else if (id === "ref-shopping-stores") {
       renderStoreTable();
-      document.getElementById("storeCardBackdrop").hidden = false;
+      openCard("storeCard");
     } else if (id === "ref-shopping-list") {
       renderShoppingList();
-      document.getElementById("shoppingCardBackdrop").hidden = false;
+      openCard("shoppingCard");
     } else if (id === "ref-food-list") {
       renderFoodList();
-      document.getElementById("foodCardBackdrop").hidden = false;
+      openCard("foodCard");
     }
   }
   // ---------------- Visit Japan Web QR 카드 (준비물 아래 고정 퀵카드에서 오픈) ----------------
@@ -263,7 +284,7 @@
   }
   document.getElementById("qrQuickBtn").addEventListener("click", () => {
     renderQrAttachments();
-    document.getElementById("qrCardBackdrop").hidden = false;
+    openCard("qrCard");
   });
   document.getElementById("qrFileInput").addEventListener("change", async (e) => {
     const files = Array.from(e.target.files);
@@ -425,7 +446,7 @@
   }
   document.getElementById("expenseDetailBtn")?.addEventListener("click", () => {
     renderExpenses();
-    document.getElementById("expenseCardBackdrop").hidden = false;
+    openCard("expenseCard");
   });
 
   // ---------------- 지도 (Leaflet + OpenStreetMap) ----------------
@@ -750,7 +771,7 @@
 
     await renderAttachments(item.id);
 
-    document.getElementById("modalBackdrop").hidden = false;
+    openCard("modal");
   }
 
   // 메모 자동저장 (debounce)
@@ -788,7 +809,7 @@
     } else {
       content.innerHTML = `<p style="color:#fff">미리보기를 지원하지 않는 파일이에요.</p>`;
     }
-    document.getElementById("viewerBackdrop").hidden = false;
+    openCard("viewer");
   }
   // ---------------- 네비게이션 바인딩 ----------------
   document.getElementById("dayTabs").addEventListener("click", (e) => {
@@ -801,7 +822,7 @@
   });
 
   // ---------------- 다크모드 ----------------
-  const THEME_KEY = "fukuoka-trip-theme";
+  const THEME_KEY = (window.TRIP_ID || "fukuoka-trip") + "-theme";
   function applyTheme(isDark) {
     if (isDark) {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -857,7 +878,7 @@
         dataUrl: await blobToDataURL(a.blob)
       })));
       const payload = {
-        app: "fukuoka-trip-pwa",
+        app: (window.TRIP_ID || "fukuoka-trip") + "-pwa",
         version: 2,
         exportedAt: new Date().toISOString(),
         notes, checklist, attachments, geocodes
@@ -867,7 +888,7 @@
       const dateStr = new Date().toISOString().slice(0, 10);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `fukuoka-trip-backup-${dateStr}.json`;
+      a.download = `${window.TRIP_ID || "fukuoka-trip"}-backup-${dateStr}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -890,7 +911,7 @@
     try {
       const text = await file.text();
       const payload = JSON.parse(text);
-      if (!payload || payload.app !== "fukuoka-trip-pwa") {
+      if (!payload || payload.app !== (window.TRIP_ID || "fukuoka-trip") + "-pwa") {
         showBackupStatus("⚠️ 이 앱의 백업 파일이 아니에요.");
         return;
       }
@@ -992,7 +1013,7 @@
   // ---------------- 아코디언 열림/닫힘 상태 기억 ----------------
   // 사용자가 마지막으로 펼치거나 접어둔 상태를 기기에 저장해두고, 다음 접속(새로고침 포함) 시 그대로 복원한다.
   // 저장된 상태가 없는 아코디언은 기본값(닫힘)으로 시작한다.
-  const ACCORDION_STATE_KEY = "fukuoka-trip-accordion-state";
+  const ACCORDION_STATE_KEY = (window.TRIP_ID || "fukuoka-trip") + "-accordion-state";
   (function initAccordionMemory() {
     let states = {};
     try { states = JSON.parse(localStorage.getItem(ACCORDION_STATE_KEY)) || {}; } catch (e) {}
@@ -1027,6 +1048,53 @@
       toast.hidden = true;
     });
   }
+
+  // ---------------- 안드로이드 "앱 설치" 배너 ----------------
+  // 안드로이드 크롬은 PWA 설치 조건을 만족하면 beforeinstallprompt 이벤트를 쏘는데,
+  // 기본 동작(브라우저 자체 미니 인포바)을 막고 이 이벤트를 저장해뒀다가
+  // 우리 쪽 UI(하단 배너)의 "설치하기" 버튼을 눌렀을 때만 표준 설치창을 띄운다.
+  // iOS Safari는 이 API 자체가 없어서 배너가 뜨지 않으며, 기존처럼 "홈 화면에 추가"를 수동 안내해야 한다.
+  let deferredInstallPrompt = null;
+  let installBannerDismissed = false;
+
+  function showInstallBanner() {
+    if (installBannerDismissed || !deferredInstallPrompt) return;
+    let banner = document.getElementById("installBanner");
+    if (banner) { banner.hidden = false; return; }
+    banner = document.createElement("div");
+    banner.id = "installBanner";
+    banner.className = "install-banner";
+    banner.innerHTML = `
+      <span>홈 화면에 앱으로 설치할 수 있어요</span>
+      <div class="install-banner-actions">
+        <button type="button" id="installBannerDismiss" aria-label="닫기">✕</button>
+        <button type="button" id="installBannerBtn">설치하기</button>
+      </div>`;
+    document.body.appendChild(banner);
+    banner.querySelector("#installBannerDismiss").addEventListener("click", () => {
+      installBannerDismissed = true; // 이번 방문에서는 다시 띄우지 않음
+      banner.hidden = true;
+    });
+    banner.querySelector("#installBannerBtn").addEventListener("click", async () => {
+      banner.hidden = true;
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt(); // 표준 설치 확인창 (브라우저 제공)
+      await deferredInstallPrompt.userChoice; // 수락/거절 여부와 무관하게 프롬프트는 1회용
+      deferredInstallPrompt = null;
+    });
+  }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    const banner = document.getElementById("installBanner");
+    if (banner) banner.hidden = true;
+  });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

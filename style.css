@@ -896,3 +896,46 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ---------- 안드로이드 "앱 설치" 배너 ---------- */
+.install-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(64px + var(--safe-bottom));
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--ink);
+  color: var(--paper-raised);
+  border-radius: 14px;
+  padding: 12px 12px 12px 16px;
+  font-size: 13.5px;
+  box-shadow: var(--shadow);
+}
+.install-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.install-banner-actions #installBannerDismiss {
+  background: none;
+  border: none;
+  color: var(--paper-raised);
+  opacity: 0.7;
+  font-size: 15px;
+  line-height: 1;
+  padding: 6px;
+}
+.install-banner-actions #installBannerBtn {
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}

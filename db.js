@@ -1,6 +1,8 @@
 // 간단한 IndexedDB 래퍼. 오프라인에서도 동작하며 사진/PDF는 Blob으로 저장한다.
 const DB = (() => {
-  const DB_NAME = "fukuoka-trip-db";
+  // index.html 맨 위 인라인 스크립트에서 정의한 window.TRIP_ID로 DB 이름을 만든다.
+  // 같은 GitHub Pages 도메인의 다른 여행 앱과 IndexedDB가 섞이지 않게 하는 핵심 값.
+  const DB_NAME = (window.TRIP_ID || "fukuoka-trip") + "-db";
   const DB_VERSION = 2;
   let dbPromise = null;
 
