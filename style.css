@@ -274,6 +274,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 
 .map-embed-wrap {
   position: relative;
+  isolation: isolate; /* Leaflet 내부 z-index(컨트롤 최대 1000)가 모달/뷰어 위로 새는 것을 막는 독립 스태킹 컨텍스트 */
   border-radius: var(--radius-card);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -866,3 +867,32 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   border-bottom: 1px solid var(--line);
 }
 .phrase-table tr.phrase-cat:first-child td { padding-top: 0; }
+
+/* ---------- 서비스워커 업데이트 토스트 ---------- */
+.sw-update-toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(64px + var(--safe-bottom));
+  z-index: 1500; /* 모달/뷰어보다도 위, 항상 눈에 띄어야 함 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--ink);
+  color: var(--paper-raised);
+  border-radius: 14px;
+  padding: 12px 12px 12px 16px;
+  font-size: 13.5px;
+  box-shadow: var(--shadow);
+}
+.sw-update-toast #swUpdateBtn {
+  flex-shrink: 0;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}

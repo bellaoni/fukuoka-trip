@@ -1,4 +1,4 @@
-const CACHE_NAME = "fukuoka-trip-v26";
+const CACHE_NAME = "fukuoka-trip-v27";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,7 +8,9 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./icon-192-maskable.png",
+  "./icon-512-maskable.png"
 ];
 
 // 지도 타일 전용 캐시. 무한정 쌓이지 않도록 개수 상한을 두고 오래된 것부터 지운다.
@@ -30,9 +32,18 @@ async function trimTileCache() {
 }
 
 self.addEventListener("install", (event) => {
+  // 여기서 바로 skipWaiting()하지 않고 "대기 중" 상태로 둔다.
+  // app.js가 이 상태를 감지해 사용자에게 새로고침 여부를 물어보고,
+  // 사용자가 동의했을 때만 아래 message 리스너를 통해 활성화된다.
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {

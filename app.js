@@ -11,6 +11,16 @@
   let currentDay = 1;
   let currentItem = null; // 현재 모달에 열려있는 item
   const objectUrls = []; // 상세 모달 첨부용 blob object URL 추적 (해제용)
+  let isArchiveEntry = false; // Bella Travel을 거쳐 들어왔는지 여부 (나만 보기 전용 기능 노출 판단용)
+
+  // ---------------- 공용: HTML 이스케이프 ----------------
+  // 사용자가 직접 타이핑한 값(체크리스트, 메모 등)을 innerHTML에 꽂기 전에 반드시 거쳐서
+  // 마크업이 깨지거나 스크립트가 삽입되는 것을 막는다. (data.js의 고정 콘텐츠는 대상 아님)
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+  }
 
   // ---------------- 공용: 팝업 카드 닫기 바인딩 ----------------
   // "{prefix}Backdrop" / "{prefix}Close" / "{prefix}CloseBottom" 이라는 id 규칙만 지키면
@@ -184,7 +194,7 @@
     el.innerHTML = list.map((it, idx) => `
       <li class="${it.done ? "done" : ""}" data-idx="${idx}">
         <input type="checkbox" ${it.done ? "checked" : ""}>
-        <span>${it.text}</span>
+        <span>${escapeHtml(it.text)}</span>
         <button class="del" aria-label="삭제">삭제</button>
       </li>`).join("");
 
@@ -444,14 +454,18 @@
   function addMarkerForItem(item, coords) {
     const marker = L.marker([coords.lat, coords.lng], { icon: makePinIcon(item.tag) });
     marker.on("click", () => {
-      if (pickingItem) return; // 위치찍기 모드 중엔 마커 탭이 시트를 열지 않게
-      showMapSheet(item);
+      if (pickingItem) {
+        // 위치찍기 모드 중 이미 있는 마커를 탭하면, 그 위치로 현재 찍는 중인 핀을 옮긴다
+        onMapTapWhilePicking(coords);
+        return;
+      }
+      showMapSheet(item, coords);
     });
     marker.addTo(mapMarkerLayers[item.day]);
   }
 
   // ---------------- 마커 탭 → 하단 시트(바텀시트) ----------------
-  function showMapSheet(item) {
+  function showMapSheet(item, coords) {
     const sheet = document.getElementById("mapSheet");
     if (!sheet) return;
     sheet.innerHTML = `
@@ -471,10 +485,27 @@
       closeMapSheet();
       openModal(item.id);
     });
+    if (coords) panMapForSheet(coords);
   }
 
   function closeMapSheet() {
     document.getElementById("mapSheet")?.classList.remove("open");
+  }
+
+  // 바텀시트가 열리면서 마커를 가리는 경우, 마커가 시트 위쪽 보이는 영역에 들어오도록 지도를 살짝 위로 이동
+  function panMapForSheet(coords) {
+    if (!leafletMap) return;
+    const sheet = document.getElementById("mapSheet");
+    if (!sheet) return;
+    const sheetHeight = sheet.offsetHeight;
+    if (!sheetHeight) return;
+    const margin = 24; // 시트 위쪽 여유 여백
+    const point = leafletMap.latLngToContainerPoint([coords.lat, coords.lng]);
+    const mapSize = leafletMap.getSize();
+    const visibleBottom = mapSize.y - sheetHeight - margin;
+    if (point.y > visibleBottom) {
+      leafletMap.panBy([0, point.y - visibleBottom], { animate: true });
+    }
   }
 
   // ---------------- 위치 확인 필요 → 지도 탭해서 직접 찍기 ----------------
@@ -580,7 +611,8 @@
   function renderPendingList(pendingItems) {
     const wrap = document.getElementById("mapPending");
     const list = document.getElementById("mapPendingList");
-    if (!pendingItems.length) { wrap.hidden = true; list.innerHTML = ""; return; }
+    // 공유자에게는 의미 없는 기능이라 Bella Travel을 거쳐 들어왔을 때만 노출
+    if (!isArchiveEntry || !pendingItems.length) { wrap.hidden = true; list.innerHTML = ""; return; }
     wrap.hidden = false;
     list.innerHTML = pendingItems.map((item) => `
       <li class="map-pending-item" data-id="${item.id}">
@@ -929,8 +961,9 @@
     }
     let entrySource = null;
     try { entrySource = sessionStorage.getItem(ENTRY_KEY); } catch (e) {}
+    isArchiveEntry = entrySource === "archive";
     const homeBtn = document.getElementById("homeBtn");
-    if (entrySource === "archive") {
+    if (isArchiveEntry) {
       homeBtn.hidden = false;
       homeBtn.addEventListener("click", () => { location.href = ARCHIVE_URL; });
       // 가계부는 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
@@ -939,6 +972,9 @@
         expenseAccordion.hidden = false;
         renderExpenses();
       }
+      // 지도 좌표 복사도 나만 보기 전용 - 공유자에게는 의미 없는 개발용 기능
+      const geoCopySection = document.getElementById("geoCopySection");
+      if (geoCopySection) geoCopySection.hidden = false;
     }
   })();
 
@@ -975,9 +1011,45 @@
   // ---------------- 초기화 ----------------
   renderTimeline();
 
+  // ---------------- 서비스워커 업데이트 알림 ----------------
+  // 새 버전의 sw.js가 설치되어 "대기 중" 상태가 되면 하단에 토스트로 알리고,
+  // 사용자가 탭하면 그때만 새 버전을 활성화 + 새로고침한다 (임의로 화면이 바뀌지 않게).
+  function showUpdateToast(reg) {
+    let toast = document.getElementById("swUpdateToast");
+    if (toast) { toast.hidden = false; return; }
+    toast = document.createElement("div");
+    toast.id = "swUpdateToast";
+    toast.className = "sw-update-toast";
+    toast.innerHTML = `<span>새 버전이 있어요</span><button type="button" id="swUpdateBtn">새로고침</button>`;
+    document.body.appendChild(toast);
+    toast.querySelector("#swUpdateBtn").addEventListener("click", () => {
+      if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      toast.hidden = true;
+    });
+  }
+
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
+      navigator.serviceWorker.register("sw.js").then((reg) => {
+        if (reg.waiting && navigator.serviceWorker.controller) showUpdateToast(reg);
+        reg.addEventListener("updatefound", () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", () => {
+            // controller가 이미 있다는 건 "새로 설치"가 아니라 "업데이트"라는 뜻
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showUpdateToast(reg);
+            }
+          });
+        });
+      }).catch(() => {});
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        location.reload();
+      });
     });
   }
 })();
