@@ -564,6 +564,23 @@
     return rows;
   }
 
+  // 가계부 앱들이 CSV를 UTF-8이 아니라 EUC-KR(CP949)로 내보내는 경우가 흔해서,
+  // file.text()(항상 UTF-8로만 해석)로 읽으면 한글 헤더("일차" 등)가 깨져 컬럼을 못 찾는다.
+  // UTF-8로 디코딩했을 때 깨진 문자(치환 문자 U+FFFD)가 섞여 있으면 EUC-KR로 다시 읽어본다.
+  async function readCsvFileAsText(file) {
+    const buffer = await file.arrayBuffer();
+    const utf8Text = new TextDecoder("utf-8").decode(buffer);
+    if (!utf8Text.includes("\uFFFD")) return utf8Text; // 정상 UTF-8
+    try {
+      const eucKrText = new TextDecoder("euc-kr").decode(buffer);
+      // EUC-KR로도 깨졌으면(치환 문자 존재) 그래도 UTF-8 결과보단 EUC-KR을 우선 신뢰
+      return eucKrText;
+    } catch (err) {
+      // 브라우저가 euc-kr 디코더를 지원하지 않는 극히 드문 경우 UTF-8 결과라도 사용
+      return utf8Text;
+    }
+  }
+
   document.getElementById("expenseCsvInput")?.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     e.target.value = "";
@@ -573,7 +590,7 @@
 
     if (!confirm("CSV를 올리면 현재 가계부 내역 전체가 새 내용으로 교체돼요. 계속할까요?")) return;
     try {
-      const text = await file.text();
+      const text = await readCsvFileAsText(file);
       const rows = parseExpenseCsv(text);
       await DB.replaceExpenses(rows);
       currentExpenses = rows;
