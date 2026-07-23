@@ -110,6 +110,7 @@
     if (view === "book") renderBook();
     if (view === "checklist") renderChecklist();
     if (view === "map") renderMap();
+    else if (leafletMap) { closeMapSheet(); cancelPicking(); }
   }
 
   function switchDay(day) {
@@ -417,10 +418,10 @@
     document.getElementById("expenseCardBackdrop").hidden = false;
   });
 
-  // ---------------- 지도 (Leaflet + OpenStreetMap, 좌표는 기기에 캐시) ----------------
-  // 흐름: mapQuery(장소명)로 Nominatim 지오코딩 → 성공하면 IndexedDB(geocache)에 저장해
-  // 다음부턴 재조회 없이 바로 사용. 실패한 장소는 지도에서 빼지 않고 하단 목록에 남겨
-  // 구글 지도 링크 + 좌표 직접 입력(수동 지정)으로 채울 수 있게 한다.
+  // ---------------- 지도 (Leaflet + OpenStreetMap) ----------------
+  // 흐름: GEO_COORDS(확정 좌표, data.js)에 있으면 그걸 바로 사용 → 없으면 mapQuery(+영문 검색어)로
+  // Nominatim 지오코딩 시도 → 성공하면 기기에 캐시. 실패한 장소는 지도에서 빼지 않고 "위치 확인 필요"
+  // 목록에 남겨, 지도를 탭해서 직접 위치를 찍어 저장할 수 있게 한다(좌표 입력 없이).
   const TAG_COLOR_VAR = { food: "var(--pink)", onsen: "var(--moss)", shop: "var(--indigo)", sight: "var(--sight)" };
   function tagColorVar(tag) { return TAG_COLOR_VAR[tag] || "var(--tape)"; }
 
@@ -442,9 +443,77 @@
 
   function addMarkerForItem(item, coords) {
     const marker = L.marker([coords.lat, coords.lng], { icon: makePinIcon(item.tag) });
-    marker.bindTooltip(item.title, { direction: "top", offset: [0, -6] });
-    marker.on("click", () => openModal(item.id));
+    marker.on("click", () => {
+      if (pickingItem) return; // 위치찍기 모드 중엔 마커 탭이 시트를 열지 않게
+      showMapSheet(item);
+    });
     marker.addTo(mapMarkerLayers[item.day]);
+  }
+
+  // ---------------- 마커 탭 → 하단 시트(바텀시트) ----------------
+  function showMapSheet(item) {
+    const sheet = document.getElementById("mapSheet");
+    if (!sheet) return;
+    sheet.innerHTML = `
+      <div class="map-sheet-tape" style="background:${tagColorVar(item.tag)}"></div>
+      <div class="map-sheet-head">
+        <span class="tl-tag">${TAG_LABEL[item.tag] || ""}</span>
+        <span class="map-sheet-time">${item.time || ""}</span>
+        <button class="map-sheet-close" type="button" aria-label="닫기">✕</button>
+      </div>
+      <h3 class="map-sheet-title">${item.title}</h3>
+      ${item.desc ? `<p class="map-sheet-desc">${item.desc}</p>` : ""}
+      <button class="btn-primary small map-sheet-detail" type="button">자세히 보기</button>
+    `;
+    sheet.classList.add("open");
+    sheet.querySelector(".map-sheet-close").addEventListener("click", closeMapSheet);
+    sheet.querySelector(".map-sheet-detail").addEventListener("click", () => {
+      closeMapSheet();
+      openModal(item.id);
+    });
+  }
+
+  function closeMapSheet() {
+    document.getElementById("mapSheet")?.classList.remove("open");
+  }
+
+  // ---------------- 위치 확인 필요 → 지도 탭해서 직접 찍기 ----------------
+  let pickingItem = null;   // 현재 위치를 찍는 중인 항목
+  let pickingMarker = null; // 확정 전 임시 마커(드래그로 미세조정 가능)
+
+  function startPicking(item) {
+    closeMapSheet();
+    pickingItem = item;
+    if (pickingMarker) { leafletMap.removeLayer(pickingMarker); pickingMarker = null; }
+    const bar = document.getElementById("mapPickerBar");
+    document.getElementById("mapPickerText").textContent = `"${item.title}" 위치를 지도에서 탭해주세요`;
+    document.getElementById("mapPickerSave").disabled = true;
+    bar.hidden = false;
+    leafletMap.getContainer().classList.add("picking");
+  }
+
+  function cancelPicking() {
+    if (pickingMarker) { leafletMap.removeLayer(pickingMarker); pickingMarker = null; }
+    pickingItem = null;
+    document.getElementById("mapPickerBar").hidden = true;
+    leafletMap.getContainer().classList.remove("picking");
+  }
+
+  async function confirmPicking() {
+    if (!pickingItem || !pickingMarker) return;
+    const { lat, lng } = pickingMarker.getLatLng();
+    await DB.setGeocode(pickingItem.mapQuery, { lat, lng, manual: true, failed: false, ts: Date.now() });
+    cancelPicking();
+    renderMap();
+  }
+
+  function onMapTapWhilePicking(latlng) {
+    if (pickingMarker) {
+      pickingMarker.setLatLng(latlng);
+    } else {
+      pickingMarker = L.marker(latlng, { icon: makePinIcon(pickingItem.tag), draggable: true }).addTo(leafletMap);
+    }
+    document.getElementById("mapPickerSave").disabled = false;
   }
 
   function renderMapLegend() {
@@ -475,6 +544,12 @@
         applyMapDayFilter(btn.dataset.mapday, true);
       });
     });
+    leafletMap.on("click", (e) => {
+      if (pickingItem) onMapTapWhilePicking(e.latlng);
+      else closeMapSheet();
+    });
+    document.getElementById("mapPickerCancel").addEventListener("click", cancelPicking);
+    document.getElementById("mapPickerSave").addEventListener("click", confirmPicking);
     renderMapLegend();
   }
 
@@ -516,10 +591,7 @@
             <a class="btn-ghost small" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.mapQuery)}" target="_blank" rel="noopener">구글 지도</a>
           </div>
         </div>
-        <form class="map-pending-form" data-id="${item.id}">
-          <input type="text" placeholder="위도,경도 (예: 33.5897,130.4206)" autocomplete="off">
-          <button type="submit" class="btn-primary small">저장</button>
-        </form>
+        <button class="btn-primary small map-pick-btn" type="button" data-id="${item.id}">📍 지도에서 위치 찍기</button>
       </li>`).join("");
 
     list.querySelectorAll(".map-retry-btn").forEach((btn) => {
@@ -539,36 +611,12 @@
       });
     });
 
-    list.querySelectorAll(".map-pending-form").forEach((form) => {
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const id = form.dataset.id;
-        const item = ITEMS.find((i) => i.id === id);
-        const input = form.querySelector("input");
-        const coords = parseCoordsInput(input.value);
-        if (!coords) {
-          input.classList.add("input-error");
-          setTimeout(() => input.classList.remove("input-error"), 1200);
-          return;
-        }
-        await DB.setGeocode(item.mapQuery, { lat: coords.lat, lng: coords.lng, manual: true, failed: false, ts: Date.now() });
-        addMarkerForItem(item, coords);
-        renderMap();
+    list.querySelectorAll(".map-pick-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const item = ITEMS.find((i) => i.id === btn.dataset.id);
+        if (item) startPicking(item);
       });
     });
-  }
-
-  // "위도,경도" 텍스트 또는 구글 지도 URL(@lat,lng, / !3d..!4d.. 패턴)에서 좌표 추출
-  function parseCoordsInput(raw) {
-    const text = (raw || "").trim();
-    if (!text) return null;
-    let m = text.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-    m = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-    m = text.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
-    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-    return null;
   }
 
   async function geocodeNominatim(query) {

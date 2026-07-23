@@ -273,6 +273,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .map-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 .map-embed-wrap {
+  position: relative;
   border-radius: var(--radius-card);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -281,6 +282,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   box-shadow: var(--shadow);
 }
 #leafletMap { width: 100%; height: 55vh; background: var(--paper-raised); }
+#leafletMap.picking { cursor: crosshair; }
 
 .map-pin-wrap { background: transparent; border: none; }
 .map-pin {
@@ -291,16 +293,49 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   border: 2px solid var(--paper-raised);
   box-shadow: 0 2px 6px rgba(46, 42, 38, 0.35);
 }
-.leaflet-tooltip {
+
+/* 위치 찍기 안내 바 (지도 위 상단 오버레이) */
+.map-picker-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   background: var(--paper-raised);
-  color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  font-family: inherit;
+  border-radius: 12px;
+  padding: 8px 10px;
   font-size: 12.5px;
   box-shadow: var(--shadow);
 }
-.leaflet-tooltip::before { display: none; }
+.map-picker-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* 마커 탭 시 나오는 하단 시트 */
+.map-bottom-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 550;
+  background: var(--paper-raised);
+  border-top: 1px solid var(--line);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 16px rgba(46, 42, 38, 0.18);
+  padding: 14px 16px 16px;
+  transform: translateY(100%);
+  transition: transform .25s ease;
+}
+.map-bottom-sheet.open { transform: translateY(0); }
+.map-sheet-tape { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 18px 18px 0 0; opacity: .85; }
+.map-sheet-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.map-sheet-time { font-size: 12px; color: var(--ink-soft); flex: 1; }
+.map-sheet-close { background: none; border: none; color: var(--ink-soft); font-size: 14px; padding: 4px; line-height: 1; }
+.map-sheet-title { margin: 2px 0 4px; font-size: 16px; }
+.map-sheet-desc { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
 
 .map-pending {
   background: var(--paper-raised);
@@ -314,22 +349,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .map-pending-item:first-child { border-top: none; padding-top: 0; }
 .map-pending-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13.5px; margin-bottom: 8px; }
 .map-pending-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.map-pending-form { display: flex; gap: 8px; }
-.map-pending-form input {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
-  caret-color: var(--indigo);
-  font-family: inherit;
-  font-size: 13px;
-}
-.map-pending-form input::placeholder { color: var(--ink-soft); opacity: 1; }
-.map-pending-form input.input-error { border-color: var(--pink-deep); }
-.map-pending-form button { flex-shrink: 0; }
+.map-pick-btn { width: 100%; }
 
 /* ---------- Booking (예약함) ---------- */
 .book-panel { display: flex; flex-direction: column; gap: 14px; }
