@@ -169,6 +169,16 @@
           </div>
           <p class="hint-text" id="backupStatus" hidden></p>
 
+          <div class="washi-divider"></div>
+          <p class="hint-text">가계부 내역만 CSV로 통째로 교체할 수 있어요. 컬럼: day(일차),item(항목명),category(카테고리),amount(금액),currency(통화),krwRate(통화 당 원화),splitWith(나눠 낼 사람 — 쉼표나 세미콜론으로 여러 명 구분). 그 외 컬럼(장소, 결제한 사람 등)은 있어도 무시돼요.</p>
+          <div class="backup-actions">
+            <label class="btn-ghost small file-btn" for="expenseCsvInput">
+              가계부 CSV로 업데이트
+              <input type="file" id="expenseCsvInput" accept=".csv,text/csv" hidden>
+            </label>
+          </div>
+          <p class="hint-text" id="expenseCsvStatus" hidden></p>
+
           <div id="geoCopySection" hidden>
             <div class="washi-divider"></div>
             <p class="hint-text">지도에서 새로 자동 확인되거나 수동 입력한 좌표를 코드에 붙여넣을 수 있는 형태로 복사해요. 복사한 내용을 저에게 보내주시면 data.js의 GEO_COORDS에 반영해서 모든 기기에서 공유되게 할게요.</p>
@@ -359,18 +369,8 @@
     <button class="modal-close" id="expenseCardClose" aria-label="닫기">✕</button>
     <div class="modal-header">
       <h2>💰 가계부</h2>
-      <p class="modal-subtitle">카테고리를 누르면 세부 항목이 표로 열려요</p>
     </div>
     <div class="modal-body store-body">
-      <div class="backup-actions">
-        <label class="btn-ghost small file-btn" for="expenseCsvInput">
-          CSV로 업데이트
-          <input type="file" id="expenseCsvInput" accept=".csv,text/csv" hidden>
-        </label>
-      </div>
-      <p class="hint-text">CSV를 올리면 현재 가계부 내역 전체가 새 내용으로 교체돼요. 컬럼: day,item,category,amount,currency,krwRate,splitWith (splitWith는 세미콜론으로 여러 명 구분)</p>
-      <p class="hint-text" id="expenseCsvStatus" hidden></p>
-      <div class="washi-divider"></div>
       <div id="expenseCategoryList"></div>
       <button class="btn-primary close-bottom" id="expenseCardCloseBottom" type="button">닫기</button>
     </div>

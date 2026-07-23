@@ -462,36 +462,106 @@
   });
 
   // ---------------- 가계부 CSV 업로드 (전체 교체) ----------------
-  // 컬럼: day,item,category,amount,currency,krwRate,splitWith
-  // splitWith는 세미콜론(;)으로 여러 명을 구분한다. 분류(공동/개인/제외) 로직인
-  // classifyExpense/myShare는 그대로 사용하므로 이 CSV 스펙만 지키면 기존 규칙이 그대로 적용된다.
-  function parseExpenseCsv(text) {
-    const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(l => l.trim() !== "");
-    if (lines.length < 2) throw new Error("빈 CSV예요.");
-    const header = lines[0].split(",").map(h => h.trim());
-    const required = ["day", "item", "category", "amount", "currency", "krwRate", "splitWith"];
-    for (const col of required) {
-      if (!header.includes(col)) throw new Error(`컬럼 누락: ${col}`);
-    }
-    return lines.slice(1).map((line, i) => {
-      const cells = line.split(",").map(c => c.trim());
-      const row = {};
-      header.forEach((h, idx) => { row[h] = cells[idx] ?? ""; });
-      const amount = Number(row.amount);
-      const krwRate = Number(row.krwRate);
-      if (!row.item || Number.isNaN(amount) || Number.isNaN(krwRate)) {
-        throw new Error(`${i + 2}번째 줄 형식이 올바르지 않아요.`);
+  // 아래 두 헤더 형식을 모두 인식한다 (컬럼 순서는 상관없음):
+  //  - 기본 형식: day,item,category,amount,currency,krwRate,splitWith
+  //  - 가계부 앱 내보내기 형식: 일차,항목명,카테고리,금액,통화,통화 당 원화,원화 환산,
+  //    장소,나만보기 비용,결제한 사람,결제한 사람 수,나눠 낼 사람,나눠 낼 사람 수
+  // splitWith(나눠 낼 사람)는 세미콜론(;) 또는 쉼표(,)로 여러 명을 구분해도 된다.
+  // 분류(공동/개인/제외) 로직인 classifyExpense/myShare는 splitWith만 보고 판단하므로
+  // 그 외 컬럼(장소, 나만보기 비용, 결제한 사람 등)은 있어도 그냥 무시된다.
+  // "▼"로 시작하는 줄이나 빈 줄을 만나면 그 아래는 요약 합계 구간으로 보고 읽기를 멈춘다.
+  const EXPENSE_HEADER_ALIASES = {
+    day: ["day", "일차"],
+    item: ["item", "항목명"],
+    category: ["category", "카테고리"],
+    amount: ["amount", "금액"],
+    currency: ["currency", "통화"],
+    krwRate: ["krwRate", "통화 당 원화"],
+    splitWith: ["splitWith", "나눠 낼 사람"],
+  };
+  const EXPENSE_FIELD_LABEL = {
+    day: "day(일차)", item: "item(항목명)", category: "category(카테고리)",
+    amount: "amount(금액)", currency: "currency(통화)", krwRate: "krwRate(통화 당 원화)",
+    splitWith: "splitWith(나눠 낼 사람)",
+  };
+
+  // 큰따옴표로 감싼 필드 안의 쉼표(예: "1,093,600")를 지켜가며 한 줄을 셀 배열로 쪼갠다.
+  function parseCsvLine(line) {
+    const cells = [];
+    let cur = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else inQuotes = false;
+        } else {
+          cur += ch;
+        }
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        cells.push(cur);
+        cur = "";
+      } else {
+        cur += ch;
       }
-      return {
-        day: row.day,
-        item: row.item,
-        category: row.category,
-        amount,
-        currency: row.currency || "KRW",
-        krwRate,
-        splitWith: row.splitWith.split(";").map(s => s.trim()).filter(Boolean)
-      };
+    }
+    cells.push(cur);
+    return cells.map(c => c.trim());
+  }
+
+  function toNumber(raw) {
+    if (raw == null) return NaN;
+    const cleaned = String(raw).replace(/,/g, "").trim();
+    if (cleaned === "") return NaN;
+    return Number(cleaned);
+  }
+
+  function parseExpenseCsv(text) {
+    const allLines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+    let start = 0;
+    while (start < allLines.length && allLines[start].trim() === "") start++;
+    if (start >= allLines.length) throw new Error("빈 CSV예요.");
+
+    const header = parseCsvLine(allLines[start]);
+    const fieldIndex = {};
+    Object.entries(EXPENSE_HEADER_ALIASES).forEach(([field, aliases]) => {
+      const idx = header.findIndex(h => aliases.includes(h));
+      if (idx !== -1) fieldIndex[field] = idx;
     });
+    const missing = Object.keys(EXPENSE_HEADER_ALIASES).filter(f => !(f in fieldIndex));
+    if (missing.length) {
+      throw new Error(`컬럼 누락: ${missing.map(f => EXPENSE_FIELD_LABEL[f]).join(", ")}`);
+    }
+
+    const rows = [];
+    for (let i = start + 1; i < allLines.length; i++) {
+      const line = allLines[i];
+      if (line.trim() === "" || line.trim().startsWith("▼")) break; // 요약 합계 구간 시작
+      const cells = parseCsvLine(line);
+      const get = (field) => cells[fieldIndex[field]] ?? "";
+
+      const amount = toNumber(get("amount"));
+      const krwRate = toNumber(get("krwRate"));
+      const item = get("item");
+      if (!item || Number.isNaN(amount) || Number.isNaN(krwRate)) {
+        throw new Error(`${i + 1}번째 줄 형식이 올바르지 않아요.`);
+      }
+      const splitWith = get("splitWith").split(/[,;]/).map(s => s.trim()).filter(Boolean);
+      rows.push({
+        day: get("day"),
+        item,
+        category: get("category"),
+        amount,
+        currency: get("currency") || "KRW",
+        krwRate,
+        splitWith,
+      });
+    }
+    if (!rows.length) throw new Error("가져올 항목이 없어요.");
+    return rows;
   }
 
   document.getElementById("expenseCsvInput")?.addEventListener("change", async (e) => {
