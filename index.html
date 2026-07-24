@@ -178,15 +178,17 @@
           </div>
           <p class="hint-text" id="backupStatus" hidden></p>
 
-          <div class="washi-divider"></div>
-          <p class="hint-text">가계부 내역만 CSV로 통째로 교체할 수 있어요. 컬럼: day(일차),item(항목명),category(카테고리),amount(금액),currency(통화),krwRate(통화 당 원화),splitWith(나눠 낼 사람 — 쉼표나 세미콜론으로 여러 명 구분). 그 외 컬럼(장소, 결제한 사람 등)은 있어도 무시돼요.</p>
-          <div class="backup-actions">
-            <label class="btn-ghost small file-btn" for="expenseCsvInput">
-              가계부 CSV로 업데이트
-              <input type="file" id="expenseCsvInput" accept=".csv,text/csv" hidden>
-            </label>
+          <div id="expenseCsvSection" hidden>
+            <div class="washi-divider"></div>
+            <p class="hint-text">가계부 내역만 CSV로 통째로 교체할 수 있어요. 컬럼: day(일차),item(항목명),category(카테고리),amount(금액),currency(통화),krwRate(통화 당 원화),splitWith(나눠 낼 사람 — 쉼표나 세미콜론으로 여러 명 구분). 그 외 컬럼(장소, 결제한 사람 등)은 있어도 무시돼요.</p>
+            <div class="backup-actions">
+              <label class="btn-ghost small file-btn" for="expenseCsvInput">
+                가계부 CSV로 업데이트
+                <input type="file" id="expenseCsvInput" accept=".csv,text/csv" hidden>
+              </label>
+            </div>
+            <p class="hint-text" id="expenseCsvStatus" hidden></p>
           </div>
-          <p class="hint-text" id="expenseCsvStatus" hidden></p>
 
           <div id="geoCopySection" hidden>
             <div class="washi-divider"></div>

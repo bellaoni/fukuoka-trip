@@ -1122,6 +1122,9 @@
       // 지도 좌표 복사도 나만 보기 전용 - 공유자에게는 의미 없는 개발용 기능
       const geoCopySection = document.getElementById("geoCopySection");
       if (geoCopySection) geoCopySection.hidden = false;
+      // 가계부 CSV 업데이트도 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
+      const expenseCsvSection = document.getElementById("expenseCsvSection");
+      if (expenseCsvSection) expenseCsvSection.hidden = false;
     }
   })();
 
