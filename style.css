@@ -397,9 +397,28 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   font-size: 14px;
 }
 .checklist-add input::placeholder { color: var(--ink-soft); opacity: 1; }
+.checklist-add select {
+  flex: 0 1 110px;
+  min-width: 0;
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+}
 .checklist-add button { flex-shrink: 0; }
 .checklist-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.checklist-list li {
+.checklist-group-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 4px 2px 0;
+  margin-top: 4px;
+}
+.checklist-group-header:first-child { margin-top: 0; }
+.checklist-list li[data-idx] {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -412,6 +431,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .checklist-list li.done { opacity: 0.5; text-decoration: line-through; }
 .checklist-list li .del { margin-left: auto; color: var(--pink-deep); background: none; border: none; font-size: 13px; }
 .checklist-list input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--indigo); }
+.checklist-item-label { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; min-width: 0; }
 
 /* ---------- Settings & Backup ---------- */
 .setting-row {

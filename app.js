@@ -221,17 +221,38 @@
   }
 
   // ---------------- 체크리스트 ----------------
+  const CHECKLIST_CATEGORY_ORDER = ["서류", "의류", "전자기기", "기타", "미분류"];
+
+  function groupChecklistByCategory(list) {
+    const groups = {};
+    list.forEach((it, idx) => {
+      // 기존(카테고리 필드 없는) 항목도 에러 없이 "미분류"로 표시(하위호환)
+      const cat = (it.category && it.category.trim()) ? it.category : "미분류";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push({ ...it, idx });
+    });
+    const knownCats = CHECKLIST_CATEGORY_ORDER.filter(cat => groups[cat]);
+    const extraCats = Object.keys(groups).filter(cat => !CHECKLIST_CATEGORY_ORDER.includes(cat)).sort();
+    return [...knownCats, ...extraCats].map(cat => ({ cat, items: groups[cat] }));
+  }
+
   async function renderChecklist() {
     const list = await DB.getChecklist();
     const el = document.getElementById("checklistList");
-    el.innerHTML = list.map((it, idx) => `
-      <li class="${it.done ? "done" : ""}" data-idx="${idx}">
-        <input type="checkbox" ${it.done ? "checked" : ""}>
-        <span>${escapeHtml(it.text)}</span>
-        <button class="del" aria-label="삭제">삭제</button>
-      </li>`).join("");
+    const groups = groupChecklistByCategory(list);
+    el.innerHTML = groups.map(({ cat, items }) => `
+      <li class="checklist-group-header" role="presentation">${escapeHtml(cat)}</li>
+      ${items.map(it => `
+        <li class="${it.done ? "done" : ""}" data-idx="${it.idx}">
+          <label class="checklist-item-label">
+            <input type="checkbox" ${it.done ? "checked" : ""} aria-label="${escapeHtml(it.text)} 완료 체크">
+            <span>${escapeHtml(it.text)}</span>
+          </label>
+          <button class="del" aria-label="${escapeHtml(it.text)} 삭제">삭제</button>
+        </li>`).join("")}
+    `).join("");
 
-    el.querySelectorAll("li").forEach(li => {
+    el.querySelectorAll("li[data-idx]").forEach(li => {
       const idx = Number(li.dataset.idx);
       li.querySelector("input").addEventListener("change", async (e) => {
         const l = await DB.getChecklist();
@@ -262,12 +283,15 @@
   document.getElementById("checklistForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = document.getElementById("checklistInput");
+    const categoryInput = document.getElementById("checklistCategoryInput");
     const text = input.value.trim();
     if (!text) return;
+    const category = categoryInput ? categoryInput.value : "";
     const list = await DB.getChecklist();
-    list.push({ text, done: false });
+    list.push({ text, done: false, category });
     await DB.setChecklist(list);
     input.value = "";
+    if (categoryInput) categoryInput.value = "";
     renderChecklist();
   });
 

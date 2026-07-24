@@ -101,6 +101,13 @@
         <div class="accordion-body">
           <form id="checklistForm" class="checklist-add">
             <input type="text" id="checklistInput" placeholder="예: 여권, 트래블월렛 충전, 우산" autocomplete="off">
+            <select id="checklistCategoryInput" aria-label="카테고리 선택">
+              <option value="">미분류</option>
+              <option value="서류">서류</option>
+              <option value="의류">의류</option>
+              <option value="전자기기">전자기기</option>
+              <option value="기타">기타</option>
+            </select>
             <button type="submit" class="btn-primary small">추가</button>
           </form>
           <ul class="checklist-list" id="checklistList"></ul>
