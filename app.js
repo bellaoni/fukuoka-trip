@@ -987,7 +987,6 @@
     const btn = document.getElementById("exportBtn");
     btn.disabled = true;
     try {
-      await loadExpenses();
       const [notes, checklist, rawAttachments, geocodes] = await Promise.all([
         DB.getAllNotes(),
         DB.getChecklist(),
@@ -1002,22 +1001,20 @@
         createdAt: a.createdAt,
         dataUrl: await blobToDataURL(a.blob)
       })));
-            const payload = {
+      const payload = {
         app: (window.TRIP_ID || "fukuoka-trip") + "-pwa",
         version: 3,
         exportedAt: new Date().toISOString(),
-        notes, checklist, attachments, geocodes,
-        // 가계부는 "나만 보기 전용"(Bella Travel 경유 시에만 노출)이므로,
-        // 비-archive 진입 시에는 백업 파일에도 아예 포함하지 않는다.
-        ...(isArchiveEntry ? { expenses: currentExpenses } : {})
+        notes, checklist, attachments, geocodes
       };
+      // 가계부는 나만 보기 전용 - Bella Travel 경유(isArchiveEntry)일 때만 백업에 포함
+      if (isArchiveEntry) {
+        await loadExpenses();
+        payload.expenses = currentExpenses;
+      }
       const dateStr = new Date().toISOString().slice(0, 10);
       downloadJSON(payload, `${window.TRIP_ID || "fukuoka-trip"}-backup-${dateStr}.json`);
-      showBackupStatus(
-        isArchiveEntry
-          ? `✅ 내보내기 완료 (${new Date().toLocaleString("ko-KR")})`
-          : `✅ 내보내기 완료 · 가계부 제외 (${new Date().toLocaleString("ko-KR")})`
-      );
+      showBackupStatus(`✅ 내보내기 완료 (${new Date().toLocaleString("ko-KR")})`);
     } catch (err) {
       showBackupStatus("⚠️ 내보내기에 실패했어요. 다시 시도해 주세요.");
     } finally {
@@ -1056,7 +1053,7 @@
       for (const [query, record] of Object.entries(payload.geocodes || {})) {
         await DB.setGeocode(query, record);
       }
-      if (Array.isArray(payload.expenses)) {
+      if (isArchiveEntry && Array.isArray(payload.expenses)) {
         await DB.replaceExpenses(payload.expenses);
         currentExpenses = payload.expenses;
         renderExpenses();
