@@ -34,16 +34,78 @@
     }[ch]));
   }
 
-  // ---------------- 공용: 팝업 카드 열기/닫기 포커스 관리 (T4: shared-core/popup.js로 이식) ----------------
-  // "{prefix}Backdrop" / "{prefix}Close" / "{prefix}CloseBottom" id 규칙, 포커스 저장/복귀 로직 모두
-  // shared-core-test에서 검증된 코드와 동일(변경 없음). 호출부는 기존과 동일하게 openCard/bindCardClose 그대로 사용.
-  const { openCard, bindCardClose } = SharedCore.popup;
+  // ---------------- 공용: 팝업 카드 열기/닫기 포커스 관리 ----------------
+  // bella-travel 허브의 통계 모달과 동일한 방식: 열 때 닫기버튼(X)으로 포커스를 옮기고,
+  // 닫을 때 팝업을 열기 전 포커스가 있던 요소로 되돌린다(lastFocusedEl).
+  // 한 번에 하나의 팝업만 열린다는 전제로 전역 변수 하나로 관리한다.
+  let lastFocusedEl = null;
 
-  // ---------------- 공용: 첨부 이미지 업로드 전 리사이즈 (T4: shared-core/attachments.js로 이식) ----------------
-  // maxDim(1600)/quality(0.85) 기본값이 기존 RESIZE_MAX_DIM/RESIZE_QUALITY와 동일하므로
-  // 호출부(resizeImageIfNeeded(file))는 옵션 없이 그대로 사용. 로직 변경 없음(canvas 리사이즈 실경로는
-  // shared-core-test에서 브라우저 전용 API라 Node 시뮬레이션 범위 밖으로 표기, 코드 자체는 원본과 동일).
-  const { resizeImageIfNeeded } = SharedCore.attachments;
+  // "{prefix}Backdrop" / "{prefix}Close"라는 id 규칙만 지키면 어떤 팝업이든
+  // 열기 전 포커스 저장 → 배경 노출 → 닫기 버튼 포커스까지 한 줄로 처리해준다.
+  function openCard(prefix) {
+    lastFocusedEl = document.activeElement;
+    const backdrop = document.getElementById(prefix + "Backdrop");
+    if (!backdrop) return;
+    backdrop.hidden = false;
+    const closeBtn = document.getElementById(prefix + "Close");
+    if (closeBtn) closeBtn.focus();
+  }
+
+  // ---------------- 공용: 팝업 카드 닫기 바인딩 ----------------
+  // "{prefix}Backdrop" / "{prefix}Close" / "{prefix}CloseBottom" 이라는 id 규칙만 지키면
+  // 어떤 팝업(모달/뷰어/각종 참고정보 카드)이든 닫기 버튼 3종(상단 X · 하단 버튼 · 배경 클릭)을
+  // 한 줄로 연결해준다. CloseBottom 버튼이 없는 팝업(예: 뷰어)은 자동으로 건너뛴다.
+  // onClose: 배경 hidden 처리 외에 추가로 정리할 상태가 있을 때만 넘기면 됨 (예: currentItem 리셋)
+  function bindCardClose(prefix, onClose) {
+    const backdrop = document.getElementById(prefix + "Backdrop");
+    if (!backdrop) return;
+    const doClose = () => {
+      backdrop.hidden = true;
+      if (lastFocusedEl && typeof lastFocusedEl.focus === "function") {
+        lastFocusedEl.focus(); // 팝업을 열기 전 포커스가 있던 요소로 되돌림
+      }
+      lastFocusedEl = null;
+      if (onClose) onClose();
+    };
+    const closeBtn = document.getElementById(prefix + "Close");
+    if (closeBtn) closeBtn.addEventListener("click", doClose);
+    const bottomBtn = document.getElementById(prefix + "CloseBottom");
+    if (bottomBtn) bottomBtn.addEventListener("click", doClose);
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) doClose();
+    });
+  }
+
+  // ---------------- 공용: 첨부 이미지 업로드 전 리사이즈 ----------------
+  // 아이폰 카메라 원본(장당 3~8MB)을 그대로 저장하면 기기 용량과 백업 파일 크기가 금방 커지므로,
+  // 긴 변 기준 MAX_DIM을 넘는 이미지는 캔버스로 축소한 뒤 JPEG로 재압축해서 저장한다.
+  // - PDF 등 이미지가 아닌 파일은 그대로 통과
+  // - GIF는 리사이즈 시 애니메이션이 깨지므로 원본 유지
+  // - createImageBitmap 미지원 등 예외 상황에서는 원본 파일을 그대로 반환 (기능 저하 없이 안전하게 폴백)
+  const RESIZE_MAX_DIM = 1600;
+  const RESIZE_QUALITY = 0.85;
+  async function resizeImageIfNeeded(file) {
+    if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, RESIZE_MAX_DIM / Math.max(bitmap.width, bitmap.height));
+      if (scale >= 1) {
+        if (bitmap.close) bitmap.close();
+        return file; // 이미 충분히 작음
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      if (bitmap.close) bitmap.close();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", RESIZE_QUALITY));
+      if (!blob) return file;
+      const newName = file.name.replace(/\.\w+$/, "") + ".jpg";
+      return new File([blob], newName, { type: "image/jpeg" });
+    } catch (e) {
+      return file; // 리사이즈 실패 시 원본 그대로 저장 (안전한 폴백)
+    }
+  }
 
   // 첨부(사진/PDF) 그리드 렌더링 공용 함수.
   // 상세 모달, Visit Japan Web QR 카드 등 첨부가 필요한 곳 어디서든 재사용.
@@ -969,13 +1031,37 @@
     if (btn) switchView(btn.dataset.view);
   });
 
-  // ---------------- 다크모드 (T4: shared-core/theme.js로 이식) ----------------
-  // initThemeToggle이 토글 checked 동기화 + theme-color 메타 반영 + change 리스너 등록까지 한 번에 처리(로직 동일).
+  // ---------------- 다크모드 ----------------
   const THEME_KEY = (window.TRIP_ID || "fukuoka-trip") + "-theme";
-  SharedCore.theme.initThemeToggle({ themeKey: THEME_KEY, toggleId: "darkModeToggle" });
+  function applyTheme(isDark) {
+    if (isDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    try { localStorage.setItem(THEME_KEY, isDark ? "dark" : "light"); } catch (e) {}
+    const meta = document.getElementById("themeColorMeta");
+    if (meta) meta.setAttribute("content", isDark ? "#1E1B18" : "#3D5A6C");
+  }
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  darkModeToggle.checked = document.documentElement.getAttribute("data-theme") === "dark";
+  applyTheme(darkModeToggle.checked); // theme-color 메타를 현재 상태와 동기화
+  darkModeToggle.addEventListener("change", (e) => applyTheme(e.target.checked));
 
-  // ---------------- 데이터 백업 / 복원 (T4: shared-core/backup.js로 이식, 로직 변경 없음) ----------------
-  const { blobToDataURL, dataURLToBlob, downloadJSON } = SharedCore.backup;
+  // ---------------- 데이터 백업 / 복원 ----------------
+  function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function dataURLToBlob(dataUrl) {
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  }
 
   function showBackupStatus(msg) {
     const el = document.getElementById("backupStatus");
@@ -1009,8 +1095,16 @@
         notes, checklist, attachments, geocodes,
         expenses: currentExpenses
       };
+      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
       const dateStr = new Date().toISOString().slice(0, 10);
-      downloadJSON(payload, `${window.TRIP_ID || "fukuoka-trip"}-backup-${dateStr}.json`);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${window.TRIP_ID || "fukuoka-trip"}-backup-${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
       showBackupStatus(`✅ 내보내기 완료 (${new Date().toLocaleString("ko-KR")})`);
     } catch (err) {
       showBackupStatus("⚠️ 내보내기에 실패했어요. 다시 시도해 주세요.");
