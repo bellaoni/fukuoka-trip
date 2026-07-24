@@ -221,26 +221,50 @@
   }
 
   // ---------------- 체크리스트 ----------------
-  const CHECKLIST_CATEGORY_ORDER = ["서류", "의류", "전자기기", "기타", "미분류"];
+  // 유효 카테고리 5종. 이 목록에 없는 값(구 카테고리명 "서류" 포함)이나 빈 값은 전부 "미분류"로 취급(하위호환)
+  const CHECKLIST_VALID_CATS = ["여권서류", "의류", "전자기기", "세안미용", "기타"];
+  const CHECKLIST_CATEGORY_ORDER = [...CHECKLIST_VALID_CATS, "미분류"];
+
+  // 필터보기 현재 선택값("전체" 또는 CHECKLIST_CATEGORY_ORDER 중 하나). 세션 내에서만 유지.
+  let checklistFilter = "전체";
 
   function groupChecklistByCategory(list) {
     const groups = {};
     list.forEach((it, idx) => {
-      // 기존(카테고리 필드 없는) 항목도 에러 없이 "미분류"로 표시(하위호환)
-      const cat = (it.category && it.category.trim()) ? it.category : "미분류";
+      // 기존(카테고리 필드 없음/구 카테고리명 포함) 항목도 에러 없이 "미분류"로 표시(하위호환)
+      const cat = CHECKLIST_VALID_CATS.includes(it.category) ? it.category : "미분류";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push({ ...it, idx });
     });
-    const knownCats = CHECKLIST_CATEGORY_ORDER.filter(cat => groups[cat]);
-    const extraCats = Object.keys(groups).filter(cat => !CHECKLIST_CATEGORY_ORDER.includes(cat)).sort();
-    return [...knownCats, ...extraCats].map(cat => ({ cat, items: groups[cat] }));
+    return CHECKLIST_CATEGORY_ORDER.filter(cat => groups[cat]).map(cat => ({ cat, items: groups[cat] }));
+  }
+
+  function renderChecklistFilterTabs() {
+    const filterEl = document.getElementById("checklistFilter");
+    if (!filterEl) return;
+    const tabs = ["전체", ...CHECKLIST_CATEGORY_ORDER];
+    filterEl.innerHTML = tabs.map(cat => `
+      <button type="button" class="checklist-filter-btn${cat === checklistFilter ? " active" : ""}"
+        data-cat="${escapeHtml(cat)}" role="tab" aria-selected="${cat === checklistFilter}">${escapeHtml(cat)}</button>
+    `).join("");
+    filterEl.querySelectorAll("[data-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        checklistFilter = btn.dataset.cat;
+        renderChecklist();
+      });
+    });
   }
 
   async function renderChecklist() {
     const list = await DB.getChecklist();
     const el = document.getElementById("checklistList");
+
+    renderChecklistFilterTabs();
+
     const groups = groupChecklistByCategory(list);
-    el.innerHTML = groups.map(({ cat, items }) => `
+    const visibleGroups = checklistFilter === "전체" ? groups : groups.filter(g => g.cat === checklistFilter);
+
+    el.innerHTML = visibleGroups.map(({ cat, items }) => `
       <li class="checklist-group-header" role="presentation">${escapeHtml(cat)}</li>
       ${items.map(it => `
         <li class="${it.done ? "done" : ""}" data-idx="${it.idx}">
@@ -248,6 +272,9 @@
             <input type="checkbox" ${it.done ? "checked" : ""} aria-label="${escapeHtml(it.text)} 완료 체크">
             <span>${escapeHtml(it.text)}</span>
           </label>
+          <select class="checklist-cat-select" data-idx="${it.idx}" aria-label="${escapeHtml(it.text)} 카테고리 변경">
+            ${CHECKLIST_CATEGORY_ORDER.map(c => `<option value="${c}" ${c === cat ? "selected" : ""}>${c}</option>`).join("")}
+          </select>
           <button class="del" aria-label="${escapeHtml(it.text)} 삭제">삭제</button>
         </li>`).join("")}
     `).join("");
@@ -263,6 +290,13 @@
       li.querySelector(".del").addEventListener("click", async () => {
         const l = await DB.getChecklist();
         l.splice(idx, 1);
+        await DB.setChecklist(l);
+        renderChecklist();
+      });
+      li.querySelector(".checklist-cat-select").addEventListener("change", async (e) => {
+        const l = await DB.getChecklist();
+        // "미분류" 선택 시 category를 빈 값으로 저장(그룹핑 로직상 미분류와 동일하게 처리됨)
+        l[idx].category = e.target.value === "미분류" ? "" : e.target.value;
         await DB.setChecklist(l);
         renderChecklist();
       });
@@ -291,7 +325,7 @@
     list.push({ text, done: false, category });
     await DB.setChecklist(list);
     input.value = "";
-    if (categoryInput) categoryInput.value = "";
+    // 카테고리 선택값은 리셋하지 않음(연속 추가 시 마지막 선택 유지)
     renderChecklist();
   });
 
