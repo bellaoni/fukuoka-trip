@@ -945,17 +945,58 @@
     return `https://${s}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
   }
 
+  // 완료 상태를 기기에 남겨두어(로컬 저장), 화면을 재접속/재실행해도 "이미 받았는지"를
+  // 알 수 있게 한다. 여행지 좌표(GEO_COORDS+지오코딩 캐시)가 바뀌면 해시가 달라져
+  // 다시 받기가 필요한 상태로 자동 전환된다. 불필요한 재요청/중복 로컬 데이터 방지 목적.
+  const OFFLINE_TILE_STATE_KEY = "fukuokaTripOfflineTilesState_v1";
+
+  function hashTripPoints(points) {
+    return points
+      .map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`)
+      .sort()
+      .join("|");
+  }
+
+  function loadOfflineTileState() {
+    try {
+      return JSON.parse(localStorage.getItem(OFFLINE_TILE_STATE_KEY)) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveOfflineTileState(state) {
+    try {
+      localStorage.setItem(OFFLINE_TILE_STATE_KEY, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  // 저장된 상태와 현재 여행지 좌표가 일치하면 기본 버튼을 숨기고 "다시 받기"만 노출한다.
+  // 반환값: 현재 상태가 최신(이미 다 받아둠)인지 여부
+  function applyOfflineMapButtonState(hash) {
+    const btn = document.getElementById("offlineMapBtn");
+    const redoBtn = document.getElementById("offlineMapRedoBtn");
+    if (!btn || !redoBtn) return false;
+    const saved = loadOfflineTileState();
+    const isUpToDate = !!saved && saved.pointsHash === hash;
+    btn.hidden = isUpToDate;
+    redoBtn.hidden = !isUpToDate;
+    return isUpToDate;
+  }
+
   let offlinePrefetchRunning = false;
   let offlinePrefetchCancelled = false;
 
   async function startOfflineTilePrefetch() {
     if (offlinePrefetchRunning) return;
     const btn = document.getElementById("offlineMapBtn");
+    const redoBtn = document.getElementById("offlineMapRedoBtn");
     const cancelBtn = document.getElementById("offlineMapCancelBtn");
     const statusEl = document.getElementById("offlineMapStatus");
     if (!btn || !statusEl) return;
 
     const points = await collectTripPoints();
+    const hash = hashTripPoints(points);
     const keySet = new Set();
     points.forEach((p) => {
       OFFLINE_TILE_ZOOMS.forEach((z) => {
@@ -978,6 +1019,7 @@
     offlinePrefetchRunning = true;
     offlinePrefetchCancelled = false;
     btn.disabled = true;
+    if (redoBtn) redoBtn.hidden = true;
     cancelBtn.hidden = false;
     statusEl.hidden = false;
     let done = 0;
@@ -1002,17 +1044,44 @@
     cancelBtn.hidden = true;
     if (offlinePrefetchCancelled) {
       statusEl.textContent = `취소했어요. (${done}/${keys.length}개 받음)`;
+      applyOfflineMapButtonState(hash);
     } else if (failed) {
-      statusEl.textContent = `✅ 완료 (${done - failed}/${keys.length}개, ${failed}개 실패 — 네트워크 상태를 확인해 주세요)`;
+      statusEl.textContent = `⚠️ 완료 (${done - failed}/${keys.length}개, ${failed}개 실패 — 네트워크 상태를 확인해 주세요. 실패한 타일이 있어 다음에 다시 받아야 할 수 있어요)`;
+      applyOfflineMapButtonState(hash);
     } else {
-      statusEl.textContent = `✅ 오프라인 지도 준비 완료 (${done}개 타일)`;
+      saveOfflineTileState({ pointsHash: hash, tileCount: keys.length, savedAt: Date.now() });
+      applyOfflineMapButtonState(hash);
+      statusEl.textContent = `✅ 오프라인 지도 준비 완료 (${keys.length}개 타일) — 이미 저장돼 있어서, 이 화면을 다시 열거나 온라인으로 돌아와도 버튼을 다시 누를 필요 없어요.`;
     }
   }
 
   document.getElementById("offlineMapBtn")?.addEventListener("click", startOfflineTilePrefetch);
+  document.getElementById("offlineMapRedoBtn")?.addEventListener("click", startOfflineTilePrefetch);
   document.getElementById("offlineMapCancelBtn")?.addEventListener("click", () => {
     offlinePrefetchCancelled = true;
   });
+
+  // 화면 진입 시 기존 저장 상태를 확인해, 이미 받아둔 상태면 기본 버튼을 숨기고
+  // "다시 받기"+상태 문구로 안내한다(재연결 후 안내문구가 사라져 다시 눌러야 하는지
+  // 헷갈리는 문제 방지). 여행지 좌표가 바뀐 경우에만 기본 버튼이 다시 나타난다.
+  (async function initOfflineMapUI() {
+    const btn = document.getElementById("offlineMapBtn");
+    const redoBtn = document.getElementById("offlineMapRedoBtn");
+    const statusEl = document.getElementById("offlineMapStatus");
+    if (!btn || !redoBtn || !statusEl) return;
+    const points = await collectTripPoints();
+    const hash = hashTripPoints(points);
+    const saved = loadOfflineTileState();
+    const isUpToDate = applyOfflineMapButtonState(hash);
+    if (isUpToDate && saved) {
+      const dateStr = new Date(saved.savedAt).toLocaleDateString("ko-KR");
+      statusEl.hidden = false;
+      statusEl.textContent = `✅ 오프라인 지도 저장됨 (${dateStr} 기준, 타일 ${saved.tileCount}개). 새 장소가 추가되면 다시 받기가 나타나요.`;
+    } else if (saved && !isUpToDate) {
+      statusEl.hidden = false;
+      statusEl.textContent = "여행지 정보가 바뀌어서 오프라인 지도를 다시 받아야 해요.";
+    }
+  })();
 
   // ---------------- 상세 모달 ----------------
   async function openModal(id) {
