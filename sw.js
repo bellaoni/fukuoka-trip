@@ -1,10 +1,17 @@
-const CACHE_NAME = "fukuoka-trip-v33";
+// __CACHE_VERSION__은 배포 시 GitHub Actions(.github/workflows/deploy.yml)가
+// 커밋 SHA 짧은 7자리로 자동 치환한다(sw-version-test에서 검증). 수동 증가 불필요.
+// TILE_CACHE는 배포와 무관하게 유지되는 별도 캐시라 버전 자동화 대상에서 제외(불필요한 타일 재다운로드 방지).
+const CACHE_NAME = "fukuoka-trip-v__CACHE_VERSION__";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css",
   "./db.js",
   "./data.js",
+  "./shared-core/theme.js",
+  "./shared-core/popup.js",
+  "./shared-core/attachments.js",
+  "./shared-core/backup.js",
   "./app.js",
   "./manifest.json",
   "./icon-192.png",
