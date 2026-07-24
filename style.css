@@ -273,6 +273,9 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .map-legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-soft); }
 .map-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
+.map-offline-bar { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
+.map-offline-bar .hint-text { margin: 0; flex: 1; }
+
 .map-embed-wrap {
   position: relative;
   isolation: isolate; /* Leaflet 내부 z-index(컨트롤 최대 1000)가 모달/뷰어 위로 새는 것을 막는 독립 스태킹 컨텍스트 */

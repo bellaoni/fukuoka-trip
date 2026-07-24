@@ -21,8 +21,11 @@ const APP_SHELL = [
 ];
 
 // 지도 타일 전용 캐시. 무한정 쌓이지 않도록 개수 상한을 두고 오래된 것부터 지운다.
+// (T6) 앱의 "오프라인 지도 받기" 버튼으로 여행 동선 반경 내 타일을 미리 받아둘 수 있는데,
+// 그 결과가 평소 패닝으로 쌓인 타일에 밀려 지워지지 않도록 상한을 여유있게 잡음
+// (현재 여행 동선 기준 프리페치 시 약 70~80개 타일 소요 — app.js OFFLINE_TILE_* 참고).
 const TILE_CACHE = "fukuoka-trip-tiles-v1";
-const TILE_LIMIT = 400; // 타일 1개 약 10~15KB → 최대 약 5~6MB 수준으로 제한
+const TILE_LIMIT = 700; // 타일 1개 약 10~15KB → 최대 약 7~10MB 수준
 
 function isTileRequest(url) {
   return /^[abc]\.tile\.openstreetmap\.org$/.test(url.hostname);

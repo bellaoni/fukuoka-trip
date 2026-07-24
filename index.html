@@ -71,6 +71,11 @@
         <button class="day-tab" data-mapday="3" type="button"><span class="day-num">DAY 3</span></button>
       </nav>
       <div class="map-legend" id="mapLegend"></div>
+      <div class="map-offline-bar">
+        <button class="btn-ghost small" id="offlineMapBtn" type="button">📥 오프라인 지도 받기</button>
+        <button class="btn-ghost small" id="offlineMapCancelBtn" type="button" hidden>취소</button>
+      </div>
+      <p class="hint-text" id="offlineMapStatus" hidden></p>
       <div class="map-embed-wrap">
         <div id="leafletMap"></div>
         <div class="map-picker-bar" id="mapPickerBar" hidden>
