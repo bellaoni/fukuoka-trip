@@ -425,8 +425,7 @@
     return 0;
   }
   // 통화 표시 규칙: 기호가 있는 통화는 기호+숫자(₩1,000), 기호가 없는 통화는 숫자+코드(1,000 VND)
-  // 다른 여행(다른 통화)에서도 그대로 재사용 가능하도록 맵만 채워서 씀
-  const CURRENCY_SYMBOLS = { KRW: "₩", USD: "$", JPY: "¥", EUR: "€", GBP: "£", CNY: "¥" };
+  // 통화-기호 매핑은 data.js CURRENCY_SYMBOLS(B4 단일 소스)를 그대로 참조. 새 통화 추가 시 data.js만 수정하면 됨.
   function formatMoney(amount, currency) {
     const symbol = CURRENCY_SYMBOLS[currency];
     const numStr = amount.toLocaleString("ko-KR", { maximumFractionDigits: 2 });

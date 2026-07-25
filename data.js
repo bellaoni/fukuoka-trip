@@ -341,6 +341,12 @@ const DEFAULT_CURRENCY = "KRW";
 const DEFAULT_KRW_RATE = 1;
 const krw = (e) => ({ currency: DEFAULT_CURRENCY, krwRate: DEFAULT_KRW_RATE, ...e });
 
+// 통화 기호 (단일 소스, B4) — F2(krw 기본값)와는 별도 계층.
+// F2는 "KRW 항목의 반복 입력 생략"을 위한 것이고, 이 표는 "화면에 어떤 기호로 보여줄지"를 위한 것으로 목적이 다르다.
+// 새 통화를 지원해야 하면 이 표에 한 줄만 추가하면 되고(app.js 수정 불필요),
+// 등록되지 않은 통화는 app.js formatMoney()가 기호 없이 "금액 통화코드"로 자동 표시한다(예: "100 THB").
+const CURRENCY_SYMBOLS = { KRW: "₩", USD: "$", JPY: "¥", EUR: "€", GBP: "£", CNY: "¥" };
+
 const EXPENSES = [
   krw({ day: "여행준비", item: "항공권 왕복-제주항공", category: "항공", amount: 640000, splitWith: ["동녘하늘노을"] }),
   krw({ day: "여행준비", item: "호텔 2박-여기어때 예약", category: "숙소", amount: 210000, splitWith: ["동녘하늘노을"] }),
