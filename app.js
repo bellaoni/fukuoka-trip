@@ -105,6 +105,16 @@
     renderTimeline();
   }
 
+  // ---------------- 일정 탭 렌더링 (B3 2/6: TRIP.days 기반 동적 생성) ----------------
+  function renderDayTabs() {
+    const el = document.getElementById("dayTabs");
+    if (!el) return;
+    el.innerHTML = TRIP.days.map(d => `
+      <button class="day-tab${d.day === currentDay ? " active" : ""}" data-day="${d.day}">
+        <span class="day-num">DAY ${d.day}</span><span class="day-date">${d.date}</span>
+      </button>`).join("");
+  }
+
   // ---------------- 타임라인 ----------------
   function renderTimeline() {
     const el = document.getElementById("timeline");
@@ -1427,6 +1437,7 @@
   })();
 
   // ---------------- 초기화 ----------------
+  renderDayTabs();
   renderTimeline();
 
   // ---------------- 서비스워커 업데이트 알림 ----------------
