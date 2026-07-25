@@ -4,19 +4,28 @@
 
 **GitHub 앱에는 "파일 업로드" 기능이 없어요.** 반드시 **Safari**에서 진행해야 해요.
 
+이 저장소는 **GitHub Actions**로 자동 배포돼요(`.github/workflows/deploy.yml`).
+main 브랜치에 파일을 올리면(커밋하면) 자동으로 빌드·배포까지 끝나고,
+서비스워커 캐시 버전도 커밋마다 자동으로 갱신되니 `sw.js`의 버전 숫자를 직접 손댈 필요는 없어요.
+
+**최초 1회만 설정**
 1. 이미 `fukuoka-trip` 저장소를 만들었다면 그대로 사용
-2. **Safari** 앱을 열고 `github.com` 접속 → 로그인
-3. 저장소(`fukuoka-trip`) 페이지로 이동
-4. 화면 우측 하단(또는 주소창 옆) **"aA" 아이콘 → "데스크탑 웹 사이트 요청"** 탭
+2. 좌측 메뉴 **Settings → Pages** 이동
+3. **Build and deployment → Source**를 **GitHub Actions**로 설정
+   (※ "Deploy from a branch"가 아니에요 — 브랜치/폴더 지정은 필요 없음)
+
+**파일 올릴 때마다(수정 반영)**
+1. **Safari** 앱을 열고 `github.com` 접속 → 로그인
+2. 저장소(`fukuoka-trip`) 페이지로 이동
+3. 화면 우측 하단(또는 주소창 옆) **"aA" 아이콘 → "데스크탑 웹 사이트 요청"** 탭
    (이게 안 보이면 새로고침 버튼을 길게 눌러도 나와요)
-5. 데스크탑 화면으로 바뀌면 **Add file → Upload files** 버튼이 보여요
-6. 압축을 푼 폴더 안의 파일 9개를 **전부 선택**해서 업로드
-   (`index.html, style.css, db.js, data.js, app.js, manifest.json, sw.js, icon-192.png, icon-512.png`
-   — 폴더 없이 전부 같은 위치에 있어야 하니 이대로 올리면 됨)
-7. 하단 **Commit changes**
-8. 좌측 메뉴 **Settings → Pages** 이동 (여기도 데스크탑 모드 유지된 채로)
-9. Branch를 **main / (root)** 로 설정 → Save
-10. 1~2분 후 상단에 뜨는 `https://아이디.github.io/fukuoka-trip/` 링크로 접속
+4. 데스크탑 화면으로 바뀌면 **Add file → Upload files** 버튼이 보여요
+5. 압축을 푼 폴더 안의 파일과 폴더를 **전부 선택**해서 업로드
+   (`index.html, style.css, db.js, data.js, app.js, manifest.json, sw.js, icon-192*.png, icon-512*.png, .github/workflows/deploy.yml, shared-core/`
+   — 폴더 구조 그대로 올리면 됨. 드래그 앤 드롭으로 폴더째 끌어다 놓으면 구조가 유지돼요)
+6. 하단 **Commit changes**
+7. **Actions** 탭에서 배포가 끝난 걸 확인(보통 1~2분) 후
+   `https://아이디.github.io/fukuoka-trip/` 링크로 접속
 
 이 링크를 엄마/동행자에게 공유하면 각자 폰에서 접속 후
 **"홈 화면에 추가"** 하면 앱처럼 아이콘이 생기고 오프라인에서도 열려요.

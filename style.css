@@ -225,6 +225,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .tl-card.tag-food::before { background: var(--pink); opacity: .8; }
 .tl-card.tag-shop::before { background: var(--sight); opacity: .55; }
 .tl-card.tag-sight::before { background: var(--moss); opacity: .8; }
+/* theme 태그: 사용 중단 결정(data.js 참고). 신규 사용 없음. 과거 데이터 호환을 위해 완전삭제 전까지 유지 */
 .tl-card.tag-theme::before { background: var(--indigo); opacity: .7; }
 
 .tl-card-head {

@@ -1,5 +1,8 @@
 // 엄마랑 후쿠오카 2박 3일 일정 데이터
-// tag: normal(노랑) | food(핑크) | shop(보라) | sight(초록) | theme(indigo, 테마/체험 · 아직 미사용)  (워시테이프 색상에 사용)
+// tag: normal(노랑) | food(핑크) | shop(보라) | sight(초록)  (워시테이프 색상에 사용)
+// ※ theme(indigo) 태그: 사용 중단 결정. 신규 항목에는 사용하지 않는다.
+//   과거 공유 링크/로컬 저장값에 theme 값이 남아있을 수 있어 라벨·색상 매핑(app.js)과
+//   CSS(style.css .tag-theme)는 완전삭제하지 않고 우선 유지한다(1단계: 숨김. 2단계: 완전삭제는 별도 결정).
 
 // ---------------- 지도 좌표 (확정본) ----------------
 // mapQuery 텍스트를 키로 사용. 여기 등록된 곳은 기기/캐시와 무관하게 항상 이 좌표를 그대로 써서
@@ -33,6 +36,8 @@ const GEO_COORDS = {
 // 곳들을 위한 영문/현지어 검색어. 자동 지오코딩 시도할 때 이 문구를 우선 사용한다.
 // (그래도 실패하면 지도에서 빼지 않고 "위치 확인 필요" 목록에 남겨 수동 확정을 기다림)
 // 지금까지 실패했던 곳은 전부 위 GEO_COORDS에 확정 좌표로 반영되어 현재는 비어있음.
+// 빈 객체({})는 정상 상태이며 별도 조치가 필요하지 않다 — app.js의 geocodeNominatim이
+// 값이 없거나 빈 문자열이면 자동으로 원본 query를 쓰고, 그마저 빈 값이면 조회 자체를 건너뛴다.
 const GEO_SEARCH_QUERY = {};
 
 const TRIP = {
@@ -233,17 +238,18 @@ const JAPANESE_PHRASES = [
 
 // ---------------- 참고정보: 쇼핑 추천 매장 (표) ----------------
 // 필드명은 다른 여행에서도 그대로 재사용 가능하도록 통일함: name/area/hours/recommend/mapQuery/image
-// image는 지금은 비워두고, 나중에 매장 사진 URL을 채우면 표에 썸네일로 자동 표시됨(추후 확장용, 필수 아님)
+// image는 필드 자체를 생략하면 됨(값을 넣지 않아도 app.js가 없는 것으로 처리). 나중에 매장 사진
+// URL을 추가하고 싶은 항목에만 image: "URL" 을 넣으면 표에 썸네일로 자동 표시됨(추후 확장용, 필수 아님)
 // hours는 2026년 7월 기준 조사 값으로, 시설 사정에 따라 변경될 수 있어 방문 전 재확인 권장
 const SHOPPING_STORES = [
-  { name: "UNIQLO", area: "미나 텐진", hours: "10:00~20:00", recommend: "여성 의류, 에어리즘, 린넨셔츠", mapQuery: "유니클로 미나 텐진", image: null },
-  { name: "GU", area: "미나 텐진", hours: "10:00~20:00", recommend: "여성 의류, 원피스, 신발", mapQuery: "GU 미나 텐진", image: null },
-  { name: "MUJI", area: "JR 하카타시티", hours: "10:00~20:00", recommend: "생활용품, 의류, 화장품, 간식", mapQuery: "무인양품 JR 하카타시티", image: null },
-  { name: "LOFT", area: "미나 텐진", hours: "10:00~20:00", recommend: "문구, 여행용품, 화장품", mapQuery: "로프트 미나 텐진", image: null },
-  { name: "@cosme STORE", area: "텐진", hours: "10:00~20:30", recommend: "일본 인기 화장품", mapQuery: "코스메 스토어 텐진", image: null },
-  { name: "PLAZA", area: "텐진", hours: "10:00~20:00", recommend: "화장품, 캐릭터 굿즈, 간식", mapQuery: "플라자 텐진", image: null },
-  { name: "CASETiFY", area: "아뮤플라자 하카타", hours: "10:00~20:00", recommend: "휴대폰 케이스, 액세서리", mapQuery: "케이스티파이 아뮤플라자 하카타", image: null },
-  { name: "Don Quijote", area: "텐진", hours: "24시간", recommend: "과자, 의약품, 화장품, 기념품", mapQuery: "돈키호테 텐진", image: null },
+  { name: "UNIQLO", area: "미나 텐진", hours: "10:00~20:00", recommend: "여성 의류, 에어리즘, 린넨셔츠", mapQuery: "유니클로 미나 텐진" },
+  { name: "GU", area: "미나 텐진", hours: "10:00~20:00", recommend: "여성 의류, 원피스, 신발", mapQuery: "GU 미나 텐진" },
+  { name: "MUJI", area: "JR 하카타시티", hours: "10:00~20:00", recommend: "생활용품, 의류, 화장품, 간식", mapQuery: "무인양품 JR 하카타시티" },
+  { name: "LOFT", area: "미나 텐진", hours: "10:00~20:00", recommend: "문구, 여행용품, 화장품", mapQuery: "로프트 미나 텐진" },
+  { name: "@cosme STORE", area: "텐진", hours: "10:00~20:30", recommend: "일본 인기 화장품", mapQuery: "코스메 스토어 텐진" },
+  { name: "PLAZA", area: "텐진", hours: "10:00~20:00", recommend: "화장품, 캐릭터 굿즈, 간식", mapQuery: "플라자 텐진" },
+  { name: "CASETiFY", area: "아뮤플라자 하카타", hours: "10:00~20:00", recommend: "휴대폰 케이스, 액세서리", mapQuery: "케이스티파이 아뮤플라자 하카타" },
+  { name: "Don Quijote", area: "텐진", hours: "24시간", recommend: "과자, 의약품, 화장품, 기념품", mapQuery: "돈키호테 텐진" },
 ];
 
 // ---------------- 참고정보: 쇼핑리스트 / 꼭 먹어야 할 음식 공통 데이터 구조 ----------------
@@ -253,23 +259,23 @@ const SHOPPING_STORES = [
 // ---------------- 참고정보: 쇼핑리스트 (돈키호테 · 기념품만 - 편의점/텐진지하상가 간식류는 음식 카드로 이동) ----------------
 const SHOPPING_LIST = [
   { group: "🛍️ 돈키호테", items: [
-    { title: "곤약젤리", desc: "저칼로리 인기 젤리 간식", mapQuery: "돈키호테 텐진", image: null },
-    { title: "자가리코", desc: "바삭한 스틱 감자칩 과자", mapQuery: "돈키호테 텐진", image: null },
-    { title: "알포트 초콜릿", desc: "비스킷 + 초콜릿 스테디셀러 과자", mapQuery: "돈키호테 텐진", image: null },
-    { title: "킷캣 일본 한정", desc: "일본에서만 만나는 한정판 킷캣", mapQuery: "돈키호테 텐진", image: null },
-    { title: "휴족시간", desc: "여행 필수템, 다리 피로 완화 패치", mapQuery: "돈키호테 텐진", image: null },
-    { title: "로이히츠보코 파스", desc: "일본 국민 파스, 어깨·다리 결림에", mapQuery: "돈키호테 텐진", image: null },
-    { title: "캔메이크", desc: "가성비 좋은 일본 인기 화장품 브랜드", mapQuery: "돈키호테 텐진", image: null },
-    { title: "세잔느", desc: "저렴하고 품질 좋은 베이스 메이크업", mapQuery: "돈키호테 텐진", image: null },
-    { title: "멜라노CC", desc: "미백 비타민C 에센스, 여행 필수템", mapQuery: "돈키호테 텐진", image: null },
-    { title: "비오레 선크림", desc: "가볍고 산뜻한 사용감의 인기 선크림", mapQuery: "돈키호테 텐진", image: null },
+    { title: "곤약젤리", desc: "저칼로리 인기 젤리 간식", mapQuery: "돈키호테 텐진" },
+    { title: "자가리코", desc: "바삭한 스틱 감자칩 과자", mapQuery: "돈키호테 텐진" },
+    { title: "알포트 초콜릿", desc: "비스킷 + 초콜릿 스테디셀러 과자", mapQuery: "돈키호테 텐진" },
+    { title: "킷캣 일본 한정", desc: "일본에서만 만나는 한정판 킷캣", mapQuery: "돈키호테 텐진" },
+    { title: "휴족시간", desc: "여행 필수템, 다리 피로 완화 패치", mapQuery: "돈키호테 텐진" },
+    { title: "로이히츠보코 파스", desc: "일본 국민 파스, 어깨·다리 결림에", mapQuery: "돈키호테 텐진" },
+    { title: "캔메이크", desc: "가성비 좋은 일본 인기 화장품 브랜드", mapQuery: "돈키호테 텐진" },
+    { title: "세잔느", desc: "저렴하고 품질 좋은 베이스 메이크업", mapQuery: "돈키호테 텐진" },
+    { title: "멜라노CC", desc: "미백 비타민C 에센스, 여행 필수템", mapQuery: "돈키호테 텐진" },
+    { title: "비오레 선크림", desc: "가볍고 산뜻한 사용감의 인기 선크림", mapQuery: "돈키호테 텐진" },
   ]},
   { group: "🎁 후쿠오카 기념품", items: [
-    { title: "하카타 토리몬", desc: "후쿠오카 대표 기념품, 부드러운 카스텔라 만주", mapQuery: "하카타 토리몬 후쿠오카", image: null },
-    { title: "멘베이", desc: "명란 맛 시즈닝을 뿌린 과자", mapQuery: "멘베이 후쿠오카", image: null },
-    { title: "치쿠시모치", desc: "쫄깃한 인절미 스타일 화과자", mapQuery: "치쿠시모치 후쿠오카", image: null },
-    { title: "명란 제품", desc: "후쿠오카 특산품, 명란젓 관련 상품", mapQuery: "명란 후쿠오카 선물", image: null },
-    { title: "아마오우 딸기 과자", desc: "후쿠오카 명물 딸기맛 과자류", mapQuery: "아마오우 딸기 과자 후쿠오카", image: null },
+    { title: "하카타 토리몬", desc: "후쿠오카 대표 기념품, 부드러운 카스텔라 만주", mapQuery: "하카타 토리몬 후쿠오카" },
+    { title: "멘베이", desc: "명란 맛 시즈닝을 뿌린 과자", mapQuery: "멘베이 후쿠오카" },
+    { title: "치쿠시모치", desc: "쫄깃한 인절미 스타일 화과자", mapQuery: "치쿠시모치 후쿠오카" },
+    { title: "명란 제품", desc: "후쿠오카 특산품, 명란젓 관련 상품", mapQuery: "명란 후쿠오카 선물" },
+    { title: "아마오우 딸기 과자", desc: "후쿠오카 명물 딸기맛 과자류", mapQuery: "아마오우 딸기 과자 후쿠오카" },
   ]},
 ];
 
@@ -284,41 +290,47 @@ const SHOPPING_LIST = [
 //   - splitWith 인원이 1명인데 내가 아니면 → 내 가계부에서 제외 (타인 단독 경비)
 const ME_NAME = "동녘하늘노을";
 
+// 통화 기본값: 대부분의 지출이 KRW라 매 항목마다 currency/krwRate를 반복 입력하지 않도록
+// 기본값을 상수화하고 krw(...)로 감싼다. KRW가 아닌 항목만 currency/krwRate를 직접 명시한다.
+const DEFAULT_CURRENCY = "KRW";
+const DEFAULT_KRW_RATE = 1;
+const krw = (e) => ({ currency: DEFAULT_CURRENCY, krwRate: DEFAULT_KRW_RATE, ...e });
+
 const EXPENSES = [
-  { day: "여행준비", item: "항공권 왕복-제주항공", category: "항공", amount: 640000, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
-  { day: "여행준비", item: "호텔 2박-여기어때 예약", category: "숙소", amount: 210000, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+  krw({ day: "여행준비", item: "항공권 왕복-제주항공", category: "항공", amount: 640000, splitWith: ["동녘하늘노을"] }),
+  krw({ day: "여행준비", item: "호텔 2박-여기어때 예약", category: "숙소", amount: 210000, splitWith: ["동녘하늘노을"] }),
   { day: "여행준비", item: "스이카 충전", category: "교통", amount: 1000, currency: "JPY", krwRate: 9.4888, splitWith: ["동녘하늘노을"] },
-  { day: "여행준비", item: "엄마 2기가 이심", category: "기타", amount: 3900, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
-  { day: "여행준비", item: "클룩 무제한 이심", category: "기타", amount: 7548, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
-  { day: "여행준비", item: "여행자보험2인 - 현대해상", category: "기타", amount: 5500, currency: "KRW", krwRate: 1, splitWith: ["동녘하늘노을"] },
+  krw({ day: "여행준비", item: "엄마 2기가 이심", category: "기타", amount: 3900, splitWith: ["동녘하늘노을"] }),
+  krw({ day: "여행준비", item: "클룩 무제한 이심", category: "기타", amount: 7548, splitWith: ["동녘하늘노을"] }),
+  krw({ day: "여행준비", item: "여행자보험2인 - 현대해상", category: "기타", amount: 5500, splitWith: ["동녘하늘노을"] }),
 ];
 
 // ---------------- 참고정보: 꼭 먹어야 할 음식 (간식은 구매처별로 분류) ----------------
 const FOOD_LIST = [
   { group: "🍽️ 식사", items: [
-    { title: "하카타 돈코츠 라멘", desc: "진한 돼지뼈 육수, 후쿠오카 대표 라멘", mapQuery: "하카타 돈코츠 라멘 맛집", image: null },
-    { title: "모츠나베", desc: "곱창이 들어간 후쿠오카식 전골 요리", mapQuery: "모츠나베 맛집 후쿠오카", image: null },
-    { title: "한입교자", desc: "한입 크기의 바삭한 만두", mapQuery: "한입교자 후쿠오카", image: null },
-    { title: "야키토리", desc: "숯불에 구운 꼬치구이, 술안주로 인기", mapQuery: "야키토리 맛집 후쿠오카", image: null },
-    { title: "장어덮밥", desc: "달콤짭짤한 소스의 장어 덮밥", mapQuery: "장어덮밥 맛집 후쿠오카", image: null },
-    { title: "규카츠", desc: "겉은 바삭, 속은 레어로 즐기는 소고기 커틀릿", mapQuery: "규카츠 맛집 후쿠오카", image: null },
-    { title: "회전초밥", desc: "신선한 규슈산 해산물 초밥", mapQuery: "회전초밥 후쿠오카", image: null },
-    { title: "야타이 (포장마차)", desc: "나카스 강변의 후쿠오카 명물 포장마차", mapQuery: "나카스 야타이", image: null },
+    { title: "하카타 돈코츠 라멘", desc: "진한 돼지뼈 육수, 후쿠오카 대표 라멘", mapQuery: "하카타 돈코츠 라멘 맛집" },
+    { title: "모츠나베", desc: "곱창이 들어간 후쿠오카식 전골 요리", mapQuery: "모츠나베 맛집 후쿠오카" },
+    { title: "한입교자", desc: "한입 크기의 바삭한 만두", mapQuery: "한입교자 후쿠오카" },
+    { title: "야키토리", desc: "숯불에 구운 꼬치구이, 술안주로 인기", mapQuery: "야키토리 맛집 후쿠오카" },
+    { title: "장어덮밥", desc: "달콤짭짤한 소스의 장어 덮밥", mapQuery: "장어덮밥 맛집 후쿠오카" },
+    { title: "규카츠", desc: "겉은 바삭, 속은 레어로 즐기는 소고기 커틀릿", mapQuery: "규카츠 맛집 후쿠오카" },
+    { title: "회전초밥", desc: "신선한 규슈산 해산물 초밥", mapQuery: "회전초밥 후쿠오카" },
+    { title: "야타이 (포장마차)", desc: "나카스 강변의 후쿠오카 명물 포장마차", mapQuery: "나카스 야타이" },
   ]},
   { group: "🍰 간식 · 세븐일레븐", items: [
-    { title: "아이스 고구마", desc: "여름 한정 인기 간식, 시원하고 달콤", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "계란샌드", desc: "편의점 스테디셀러, 폭신한 계란 샌드위치", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "푸딩", desc: "부드러운 커스터드 푸딩", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "메론빵", desc: "겉은 바삭 속은 폭신한 인기 빵", mapQuery: "세븐일레븐 하카타역", image: null },
-    { title: "프리미엄 커피", desc: "편의점 원두 커피, 가성비 좋음", mapQuery: "세븐일레븐 하카타역", image: null },
+    { title: "아이스 고구마", desc: "여름 한정 인기 간식, 시원하고 달콤", mapQuery: "세븐일레븐 하카타역" },
+    { title: "계란샌드", desc: "편의점 스테디셀러, 폭신한 계란 샌드위치", mapQuery: "세븐일레븐 하카타역" },
+    { title: "푸딩", desc: "부드러운 커스터드 푸딩", mapQuery: "세븐일레븐 하카타역" },
+    { title: "메론빵", desc: "겉은 바삭 속은 폭신한 인기 빵", mapQuery: "세븐일레븐 하카타역" },
+    { title: "프리미엄 커피", desc: "편의점 원두 커피, 가성비 좋음", mapQuery: "세븐일레븐 하카타역" },
   ]},
   { group: "🍰 간식 · 텐진 지하상가", items: [
-    { title: "이모야 킨지로 이모켄피", desc: "텐진 지하상가 인기 고구마 스틱, 갓 튀겨줌", mapQuery: "이모야 킨지로 텐진 지하상가", image: null },
-    { title: "RINGO 애플파이", desc: "겉바속촉 즉석 구이 애플파이", mapQuery: "링고 애플파이 텐진", image: null },
-    { title: "아마오우 딸기 디저트", desc: "후쿠오카 명물 딸기로 만든 디저트", mapQuery: "아마오우 딸기 디저트 텐진", image: null },
+    { title: "이모야 킨지로 이모켄피", desc: "텐진 지하상가 인기 고구마 스틱, 갓 튀겨줌", mapQuery: "이모야 킨지로 텐진 지하상가" },
+    { title: "RINGO 애플파이", desc: "겉바속촉 즉석 구이 애플파이", mapQuery: "링고 애플파이 텐진" },
+    { title: "아마오우 딸기 디저트", desc: "후쿠오카 명물 딸기로 만든 디저트", mapQuery: "아마오우 딸기 디저트 텐진" },
   ]},
   { group: "🍰 간식 · 그 외", items: [
-    { title: "멘타이 프랑스빵", desc: "명란 버터를 바른 후쿠오카 명물 빵", mapQuery: "멘타이 프랑스빵 후쿠오카", image: null },
-    { title: "말차 아이스크림", desc: "진한 말차 향의 아이스크림", mapQuery: "말차 아이스크림 후쿠오카", image: null },
+    { title: "멘타이 프랑스빵", desc: "명란 버터를 바른 후쿠오카 명물 빵", mapQuery: "멘타이 프랑스빵 후쿠오카" },
+    { title: "말차 아이스크림", desc: "진한 말차 향의 아이스크림", mapQuery: "말차 아이스크림 후쿠오카" },
   ]},
 ];

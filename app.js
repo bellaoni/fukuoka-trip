@@ -6,6 +6,9 @@
   // 허브 레포 이름을 바꾸면 이 값만 수정하면 됨.
   const ARCHIVE_URL = "/bella-travel/";
 
+  // theme: 사용 중단 결정(data.js 참고). 신규 항목에서 사용하지 않지만, 과거 공유 링크/로컬
+  // 저장값 호환을 위해 매핑은 유지(완전삭제 전 숨김 단계). 범례(renderMapLegend)는 실제 사용 중인
+  // 태그만 자동으로 보여주므로 theme은 항목이 없는 한 자연히 노출되지 않는다.
   const TAG_LABEL = { normal: "일정", food: "맛집", shop: "쇼핑", sight: "관광", theme: "테마/체험" };
 
   let currentDay = 1;
@@ -821,7 +824,11 @@
   }
 
   async function geocodeNominatim(query) {
+    // GEO_SEARCH_QUERY[query]가 없거나(현재 {} 기본값) 빈 문자열이면 원본 query로 대체.
+    // searchText 자체가 끝까지 빈 값이면(예: mapQuery가 빈 문자열인 항목) 무의미한 조회를
+    // 시도하지 않고 바로 실패 처리해 불필요한 네트워크 요청을 막는다.
     const searchText = GEO_SEARCH_QUERY[query] || query;
+    if (!searchText) return null;
     const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=" + encodeURIComponent(searchText);
     const res = await fetch(url);
     if (!res.ok) throw new Error("geocode failed");
