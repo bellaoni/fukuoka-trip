@@ -812,8 +812,19 @@
     `).join("");
   }
 
+  // ---------------- 지도 탭 필터 렌더링 (B3 3/6: TRIP.days 기반 동적 생성) ----------------
+  function renderMapDayFilter() {
+    const el = document.getElementById("mapDayFilter");
+    if (!el) return;
+    const allBtn = `<button class="day-tab active" data-mapday="all" type="button"><span class="day-num">전체</span></button>`;
+    const dayBtns = TRIP.days.map(d => `
+      <button class="day-tab" data-mapday="${d.day}" type="button"><span class="day-num">DAY ${d.day}</span></button>`).join("");
+    el.innerHTML = allBtn + dayBtns;
+  }
+
   function ensureLeafletMap() {
     if (leafletMap) return;
+    renderMapDayFilter();
     leafletMap = L.map("leafletMap", { zoomControl: true }).setView([33.7, 130.2], 8);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
