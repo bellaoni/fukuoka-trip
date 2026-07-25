@@ -849,7 +849,7 @@
   }
 
   function fitToVisibleMarkers() {
-    const visibleLayers = [1, 2, 3]
+    const visibleLayers = TRIP.days.map((d) => d.day)
       .filter((d) => currentMapDay === "all" || String(d) === currentMapDay)
       .map((d) => mapMarkerLayers[d]);
     const markers = visibleLayers.flatMap((g) => g.getLayers());
@@ -863,7 +863,7 @@
     document.querySelectorAll("#mapDayFilter .day-tab").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.mapday === day);
     });
-    [1, 2, 3].forEach((d) => {
+    TRIP.days.map((d) => d.day).forEach((d) => {
       const layer = mapMarkerLayers[d];
       const show = day === "all" || String(d) === day;
       if (show && !leafletMap.hasLayer(layer)) layer.addTo(leafletMap);
@@ -961,7 +961,7 @@
       byQuery.get(item.mapQuery).push(item);
     });
 
-    [1, 2, 3].forEach((d) => mapMarkerLayers[d].clearLayers());
+    TRIP.days.forEach((d) => mapMarkerLayers[d.day].clearLayers());
     const pendingItems = [];
     const toGeocode = [];
 
