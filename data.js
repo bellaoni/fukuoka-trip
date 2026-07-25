@@ -88,6 +88,14 @@ const GEO_SEARCH_QUERY = {};
 const TRIP = {
   title: "엄마랑 후쿠오카 2박 3일",
   hotel: "프린스 스마트인 하카타 (하카타역 도보 5분)",
+  // 일차 목록 (B3 1/6): index.html의 DAY 탭(#dayTabs)·지도 필터(#mapDayFilter)와
+  // app.js의 mapMarkerLayers를 이 배열 기준으로 동적 생성하기 위한 단일 소스.
+  // 이 단계에서는 필드만 추가하며, 아직 어떤 화면도 이 값을 참조하지 않는다(2~5단계에서 순차 연결).
+  days: [
+    { day: 1, date: "8.2 일" },
+    { day: 2, date: "8.3 월" },
+    { day: 3, date: "8.4 화" },
+  ],
   flights: [
     {
       route: "부산김해 → 후쿠오카",
