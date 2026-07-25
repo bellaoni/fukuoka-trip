@@ -184,6 +184,39 @@ const DB = (() => {
         r.onerror = () => rej(r.error);
       });
     },
+    // ---- 가계부 CSV 교체 전 자동 스냅샷 (D1, 최근 1~2개만 유지) ----
+    // "expenses" 스토어 안에 'snapshots'라는 별도 키로 저장(오브젝트 스토어 추가 없이 재사용, DB_VERSION 변경 불필요).
+    async getExpenseSnapshots() {
+      const store = await tx("expenses", "readonly");
+      return new Promise((res, rej) => {
+        const r = store.get("snapshots");
+        r.onsuccess = () => res(Array.isArray(r.result) ? r.result : []);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async pushExpenseSnapshot(list) {
+      const snapshots = await this.getExpenseSnapshots();
+      const next = [{ list, ts: Date.now() }, ...snapshots].slice(0, 2); // 최신 것을 앞에 두고 최대 2개까지만 유지, 오래된 것은 자동 폐기
+      const store = await tx("expenses", "readwrite");
+      return new Promise((res, rej) => {
+        const r = store.put(next, "snapshots");
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async popExpenseSnapshot() {
+      // 가장 최근 스냅샷을 꺼내 반환하고 목록에서 제거(되돌리기 1회 = 스냅샷 1개 소비)
+      const snapshots = await this.getExpenseSnapshots();
+      if (!snapshots.length) return null;
+      const [latest, ...rest] = snapshots;
+      const store = await tx("expenses", "readwrite");
+      await new Promise((res, rej) => {
+        const r = store.put(rest, "snapshots");
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
+      return latest;
+    },
     async getAllGeocodes() {
       const store = await tx("geocache", "readonly");
       return new Promise((res, rej) => {

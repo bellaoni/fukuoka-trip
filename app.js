@@ -617,21 +617,56 @@
     }
   }
 
+  // ---------------- 가계부 CSV 자동 백업 / 되돌리기 (D1, 최근 1~2개 스냅샷만 유지) ----------------
+  function showCsvStatus(msg) {
+    const statusEl = document.getElementById("expenseCsvStatus");
+    if (statusEl) { statusEl.textContent = msg; statusEl.hidden = false; }
+  }
+  async function updateExpenseUndoButton() {
+    const btn = document.getElementById("expenseUndoBtn");
+    if (!btn) return;
+    try {
+      const snapshots = await DB.getExpenseSnapshots();
+      btn.hidden = snapshots.length === 0;
+    } catch (e) {
+      btn.hidden = true;
+    }
+  }
+  document.getElementById("expenseUndoBtn")?.addEventListener("click", async () => {
+    if (!confirm("가장 최근 CSV 업로드 이전 상태로 되돌릴까요?")) return;
+    try {
+      const snapshot = await DB.popExpenseSnapshot();
+      if (!snapshot) {
+        showCsvStatus("⚠️ 되돌릴 이전 상태가 없어요.");
+        await updateExpenseUndoButton();
+        return;
+      }
+      await DB.replaceExpenses(snapshot.list);
+      currentExpenses = snapshot.list;
+      renderExpenses();
+      showCsvStatus(`↩️ 되돌리기 완료 (${new Date(snapshot.ts).toLocaleString("ko-KR")} 상태로 복원)`);
+      await updateExpenseUndoButton();
+    } catch (err) {
+      showCsvStatus("⚠️ 되돌리기에 실패했어요.");
+    }
+  });
+
   document.getElementById("expenseCsvInput")?.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     e.target.value = "";
     if (!file) return;
-    const statusEl = document.getElementById("expenseCsvStatus");
-    const showCsvStatus = (msg) => { if (statusEl) { statusEl.textContent = msg; statusEl.hidden = false; } };
 
     if (!confirm("CSV를 올리면 현재 가계부 내역 전체가 새 내용으로 교체돼요. 계속할까요?")) return;
     try {
       const text = await readCsvFileAsText(file);
       const rows = parseExpenseCsv(text);
+      await loadExpenses(); // 스냅샷 정확도를 위해 교체 직전 최신 상태로 갱신
+      await DB.pushExpenseSnapshot(currentExpenses); // 교체 전 상태를 자동 백업(최근 2개까지만 유지, 그 이전은 자동 폐기)
       await DB.replaceExpenses(rows);
       currentExpenses = rows;
       renderExpenses();
       showCsvStatus(`✅ ${rows.length}건으로 교체 완료 (${new Date().toLocaleString("ko-KR")})`);
+      await updateExpenseUndoButton();
     } catch (err) {
       showCsvStatus(`⚠️ 가져오기 실패: ${err.message || "CSV 형식을 확인해 주세요."}`);
     }
@@ -1357,6 +1392,7 @@
       // 가계부 CSV 업데이트도 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
       const expenseCsvSection = document.getElementById("expenseCsvSection");
       if (expenseCsvSection) expenseCsvSection.hidden = false;
+      updateExpenseUndoButton(); // D1: 이전에 저장된 스냅샷이 있으면 되돌리기 버튼을 보여줌
     }
   })();
 
