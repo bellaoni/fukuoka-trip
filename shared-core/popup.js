@@ -32,6 +32,10 @@ function bindCardClose(prefix, onClose) {
   backdrop.addEventListener("click", (e) => {
     if (e.target === backdrop) doClose();
   });
+  // Escape 키로 닫기: 이 카드가 실제로 열려있을 때만 반응(hidden이면 무시)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !backdrop.hidden) doClose();
+  });
 }
 
 if (typeof module !== "undefined" && module.exports) {
