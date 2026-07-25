@@ -1238,7 +1238,7 @@
   function openViewer(att, url) {
     const content = document.getElementById("viewerContent");
     if (att.type.startsWith("image/")) {
-      content.innerHTML = `<img src="${url}" alt="${att.name}">`;
+      content.innerHTML = `<img src="${url}" alt="${escapeHtml(att.name)}">`;
     } else if (att.type === "application/pdf") {
       content.innerHTML = `<iframe src="${url}"></iframe>`;
     } else {
