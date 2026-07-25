@@ -66,9 +66,9 @@
       const div = document.createElement("div");
       div.className = "attach-thumb";
       if (att.type.startsWith("image/")) {
-        div.innerHTML = `<img src="${url}" alt="${att.name}">`;
+        div.innerHTML = `<img src="${url}" alt="${escapeHtml(att.name)}">`;
       } else {
-        div.innerHTML = `<div class="pdf-badge">📄<br>${att.name}</div>`;
+        div.innerHTML = `<div class="pdf-badge">📄<br>${escapeHtml(att.name)}</div>`;
       }
       const del = document.createElement("button");
       del.className = "del-attach";
@@ -105,7 +105,7 @@
     renderTimeline();
   }
 
-  // ---------------- 일정 탭 렌더링 (B3 2/6: TRIP.days 기반 동적 생성) ----------------
+  // ---------------- 일정 탭 렌더링 (B3: TRIP.days 기반 동적 생성) ----------------
   function renderDayTabs() {
     const el = document.getElementById("dayTabs");
     if (!el) return;
@@ -690,7 +690,7 @@
   function tagColorVar(tag) { return TAG_COLOR_VAR[tag] || "var(--tape)"; }
 
   let leafletMap = null;
-  let mapMarkerLayers = null; // TRIP.days 기준 동적 생성 (B3 4/6) — { [day]: layerGroup, ... }
+  let mapMarkerLayers = null; // TRIP.days 기준 동적 생성 (B3) — { [day]: layerGroup, ... }
   let currentMapDay = "all";
   let mapInitialized = false;
   let geocodeQueueRunning = false;
@@ -812,7 +812,7 @@
     `).join("");
   }
 
-  // ---------------- 지도 탭 필터 렌더링 (B3 3/6: TRIP.days 기반 동적 생성) ----------------
+  // ---------------- 지도 탭 필터 렌더링 (B3: TRIP.days 기반 동적 생성) ----------------
   function renderMapDayFilter() {
     const el = document.getElementById("mapDayFilter");
     if (!el) return;
@@ -1368,11 +1368,13 @@
       return;
     }
     const snippet = lines.join("\n");
+    const askText = `이 여행의 data.js 파일과 함께 새 대화에서 Claude에게 붙여넣고 "GEO_COORDS에 추가해줘"라고 요청하세요. Claude가 반영한 data.js를 돌려주면, 그 파일을 GitHub 레포에 재업로드하면 모든 기기에서 공유돼요.`;
     try {
       await navigator.clipboard.writeText(snippet);
-      statusEl.textContent = `✅ ${lines.length}곳 좌표를 복사했어요. Claude에게 붙여넣어서 GEO_COORDS에 반영해달라고 하면 돼요.`;
+      statusEl.textContent = `✅ ${lines.length}곳 좌표를 복사했어요. ${askText}`;
     } catch (e) {
-      statusEl.textContent = snippet; // 클립보드 접근 실패 시 화면에 직접 표시해서 수동으로 복사 가능하게
+      // 클립보드 접근 실패 시 화면에 직접 표시해서 수동으로 복사 가능하게 (안내 문구를 위에 붙여서 표시)
+      statusEl.textContent = `아래 내용을 선택해 복사한 뒤, ${askText}\n\n${snippet}`;
     }
     statusEl.hidden = false;
   });
