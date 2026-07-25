@@ -279,8 +279,37 @@
     renderChecklist();
   });
 
+  // ---------------- 공항↔시내 이동방법 카드 (B2: data.js TRANSIT_INFO 렌더링) ----------------
+  function renderTransitCard() {
+    const t = TRANSIT_INFO;
+    const header = document.getElementById("transitCardHeader");
+    if (header) header.innerHTML = `<h2>${t.title}</h2>`;
+    const body = document.getElementById("transitCardBody");
+    if (!body) return;
+    body.innerHTML = t.methods.map((m, i) => `
+      ${i > 0 ? '<hr class="washi-divider">' : ""}
+      <h3>${m.icon} ${m.name}</h3>
+      <ul>
+        ${m.steps.map(s => `<li>${s}</li>`).join("")}
+        <li><b>${m.durationLabel}</b>: ${m.duration}</li>
+        <li><b>${m.fareLabel}</b>: ${m.fare}</li>
+      </ul>
+      <p class="pay-label">결제</p>
+      <ul>
+        ${m.payment.map(p => `<li>${p}</li>`).join("")}
+      </ul>
+    `).join("") + `
+      <hr class="washi-divider">
+      <h3>💡 추천</h3>
+      <ul>
+        ${t.recommend.map(r => `<li>${r}</li>`).join("")}
+      </ul>
+    `;
+  }
+
   function openReferenceCard(id) {
     if (id === "ref-airport-station") {
+      renderTransitCard();
       openCard("transitCard");
     } else if (id === "ref-japanese-phrases") {
       renderPhraseTable();

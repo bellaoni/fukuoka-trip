@@ -263,50 +263,9 @@
 <div class="viewer-backdrop" id="transitCardBackdrop" hidden>
   <div class="modal-sheet small-sheet transit-card">
     <button class="modal-close" id="transitCardClose" aria-label="닫기">✕</button>
-    <div class="modal-header">
-      <h2>✈️ 후쿠오카 공항 → 하카타역</h2>
-    </div>
+    <div class="modal-header" id="transitCardHeader"></div>
     <div class="modal-body transit-body">
-
-      <h3>🚇 지하철 (추천)</h3>
-      <ul>
-        <li>국제선 → 무료 셔틀버스 → 국내선 이동 (약 10~15분)</li>
-        <li>후쿠오카공항역(공항선) 탑승</li>
-        <li>2정거장 후 하카타역 하차 (약 5분)</li>
-        <li><b>총 소요시간</b>: 약 20~25분</li>
-        <li><b>요금</b>: 260엔</li>
-      </ul>
-      <p class="pay-label">결제</p>
-      <ul>
-        <li>현금</li>
-        <li>IC 교통카드 (SUGOCA·ICOCA·Suica 등)</li>
-        <li>Visa 등 컨택리스 카드</li>
-      </ul>
-
-      <hr class="washi-divider">
-
-      <h3>🚌 직행버스</h3>
-      <ul>
-        <li>국제선 1층 버스 승강장 이용</li>
-        <li>하카타역(치쿠시구치) 방면 직행</li>
-        <li><b>소요시간</b>: 약 15~20분 (교통 상황에 따라 변동)</li>
-        <li><b>요금</b>: 400엔</li>
-      </ul>
-      <p class="pay-label">결제</p>
-      <ul>
-        <li>현금</li>
-        <li>IC 교통카드</li>
-        <li>Visa 등 컨택리스 카드</li>
-      </ul>
-
-      <hr class="washi-divider">
-
-      <h3>💡 추천</h3>
-      <ul>
-        <li>빠르고 시간 정확: 🚇 지하철</li>
-        <li>짐이 많거나 환승이 번거롭다면: 🚌 직행버스</li>
-      </ul>
-
+      <div id="transitCardBody"></div>
       <button class="btn-primary close-bottom" id="transitCardCloseBottom" type="button">닫기</button>
     </div>
   </div>
