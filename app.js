@@ -162,8 +162,9 @@
   }
 
   // ---------------- 체크리스트 ----------------
-  // 유효 카테고리 5종. 이 목록에 없는 값(구 카테고리명 "서류" 포함)이나 빈 값은 전부 "미분류"로 취급(하위호환)
-  const CHECKLIST_VALID_CATS = ["여권서류", "의류", "전자기기", "세안미용", "기타"];
+  // 유효 카테고리는 data.js의 CHECKLIST_CATEGORIES가 단일 소스(B1). 이 목록에 없는 값(구 카테고리명
+  // "서류" 포함)이나 빈 값은 전부 "미분류"로 취급(하위호환)
+  const CHECKLIST_VALID_CATS = CHECKLIST_CATEGORIES;
   const CHECKLIST_CATEGORY_ORDER = [...CHECKLIST_VALID_CATS, "미분류"];
 
   // 필터보기 현재 선택값("전체" 또는 CHECKLIST_CATEGORY_ORDER 중 하나). 세션 내에서만 유지.
@@ -254,6 +255,14 @@
       });
     }
   }
+
+  // 추가폼 카테고리 select: index.html에 하드코딩하지 않고 data.js의 CHECKLIST_CATEGORIES에서 렌더링(단일 소스화, B1)
+  (function populateChecklistCategoryInput() {
+    const el = document.getElementById("checklistCategoryInput");
+    if (!el) return;
+    el.innerHTML = CHECKLIST_VALID_CATS.map(c => `<option value="${c}">${c}</option>`).join("")
+      + `<option value="" selected>미분류</option>`;
+  })();
 
   document.getElementById("checklistForm").addEventListener("submit", async (e) => {
     e.preventDefault();
