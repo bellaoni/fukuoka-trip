@@ -690,7 +690,7 @@
   function tagColorVar(tag) { return TAG_COLOR_VAR[tag] || "var(--tape)"; }
 
   let leafletMap = null;
-  let mapMarkerLayers = null; // { 1: layerGroup, 2: layerGroup, 3: layerGroup }
+  let mapMarkerLayers = null; // TRIP.days 기준 동적 생성 (B3 4/6) — { [day]: layerGroup, ... }
   let currentMapDay = "all";
   let mapInitialized = false;
   let geocodeQueueRunning = false;
@@ -830,11 +830,10 @@
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(leafletMap);
-    mapMarkerLayers = {
-      1: L.layerGroup().addTo(leafletMap),
-      2: L.layerGroup().addTo(leafletMap),
-      3: L.layerGroup().addTo(leafletMap)
-    };
+    mapMarkerLayers = {};
+    TRIP.days.forEach((d) => {
+      mapMarkerLayers[d.day] = L.layerGroup().addTo(leafletMap);
+    });
     document.querySelectorAll("#mapDayFilter .day-tab").forEach((btn) => {
       btn.addEventListener("click", () => {
         applyMapDayFilter(btn.dataset.mapday, true);
