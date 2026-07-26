@@ -300,10 +300,11 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   transform: rotate(-45deg);
   border: 3px solid var(--paper-raised);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
-  transition: transform 0.2s ease; /* 크기가 부드럽게 커지도록 트랜지션 추가 */
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: bottom center; /* 뾰족한 끝점(좌표)을 기준으로 커지도록 설정 */
 }
 .map-pin.selected {
-  transform: rotate(-45deg) scale(1.2);
+  transform: rotate(-45deg) scale(1.25);
   z-index: 1000;
 }
 
