@@ -696,13 +696,15 @@
   let mapInitialized = false;
   let geocodeQueueRunning = false;
 
+  // 마커 가시성 개선(T11): 작은 원형 점 대신 눈에 잘 띄는 핀(물방울) 모양으로 변경.
+  // 좌표 기준점이 핀 끝(뾰족한 부분)으로 바뀌므로 iconAnchor/popupAnchor도 함께 조정했다.
   function makePinIcon(tag) {
     return L.divIcon({
       className: "map-pin-wrap",
       html: `<span class="map-pin" style="background:${tagColorVar(tag)}"></span>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
-      popupAnchor: [0, -8]
+      iconSize: [26, 26],
+      iconAnchor: [13, 26],
+      popupAnchor: [0, -26]
     });
   }
 
