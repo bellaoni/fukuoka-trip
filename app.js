@@ -695,6 +695,7 @@
   let currentMapDay = "all";
   let mapInitialized = false;
   let geocodeQueueRunning = false;
+  let selectedMarkerEl = null; // 현재 선택(확대)된 마커의 DOM 엘리먼트 — 시트를 닫으면 원래 크기로 복귀
 
   // 마커 가시성 개선(T11): 작은 원형 점 대신 눈에 잘 띄는 핀(물방울) 모양으로 변경.
   // 좌표 기준점이 핀 끝(뾰족한 부분)으로 바뀌므로 iconAnchor/popupAnchor도 함께 조정했다.
@@ -716,9 +717,22 @@
         onMapTapWhilePicking(coords);
         return;
       }
+      selectMarker(marker);
       showMapSheet(item, coords);
     });
     marker.addTo(mapMarkerLayers[item.day]);
+  }
+
+  // 마커 선택 시 확대 표시(T12). 상세 시트를 닫으면 selectMarker(closeMapSheet)에서 원래 크기로 복귀.
+  function selectMarker(marker) {
+    if (selectedMarkerEl) selectedMarkerEl.classList.remove("selected");
+    selectedMarkerEl = marker.getElement ? marker.getElement() : null;
+    if (selectedMarkerEl) selectedMarkerEl.classList.add("selected");
+  }
+
+  function deselectMarker() {
+    if (selectedMarkerEl) selectedMarkerEl.classList.remove("selected");
+    selectedMarkerEl = null;
   }
 
   // ---------------- 마커 탭 → 하단 시트(바텀시트) ----------------
@@ -747,6 +761,7 @@
 
   function closeMapSheet() {
     document.getElementById("mapSheet")?.classList.remove("open");
+    deselectMarker();
   }
 
   // 바텀시트가 열리면서 마커를 가리는 경우, 마커가 시트 위쪽 보이는 영역에 들어오도록 지도를 살짝 위로 이동
@@ -965,6 +980,7 @@
     });
 
     TRIP.days.forEach((d) => mapMarkerLayers[d.day].clearLayers());
+    selectedMarkerEl = null; // clearLayers로 기존 마커 DOM이 사라지므로 참조도 함께 초기화
     const pendingItems = [];
     const toGeocode = [];
 
