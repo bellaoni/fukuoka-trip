@@ -290,7 +290,7 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 #leafletMap { width: 100%; height: 55vh; background: var(--paper-raised); }
 #leafletMap.picking { cursor: crosshair; }
 
-/* 마커 가시성 개선(T11): 원형 점 → 핀(물방울) 모양, 크기 확대(14px→26px), 흰 테두리로 대비 강화 */
+/* 마커 가시성 개선(T11): 원형 점 → 핀(물방울) 모양, 크기 확대(14px→26px) */
 .map-pin-wrap { background: transparent; border: none; }
 .map-pin {
   display: block;
@@ -298,8 +298,13 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   height: 26px;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  border: 3px solid #fff;
+  border: 3px solid var(--paper-raised);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease; /* 크기가 부드럽게 커지도록 트랜지션 추가 */
+}
+.map-pin.selected {
+  transform: rotate(-45deg) scale(1.2);
+  z-index: 1000;
 }
 
 /* 위치 찍기 안내 바 (지도 위 상단 오버레이) */
