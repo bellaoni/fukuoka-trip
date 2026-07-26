@@ -58,7 +58,7 @@ main 브랜치에 파일을 올리면(커밋하면) 자동으로 빌드·배포�
   mapQuery: "하카타 카페" }
 ```
 
-- `tag`: normal(노랑) / food(핑크) / shop(보라) / sight(초록) / theme(indigo, 테마·체험용으로 준비된 태그, 아직 미사용) — 카드 위 워시테이프 색이 바뀜
+- `tag`: normal(노랑) / food(핑크) / shop(보라) / sight(초록) / theme(indigo, 테마·체험용 정식 지원 태그) — 카드 위 워시테이프 색이 바뀜
 - `mapQuery`: 모달 안 "구글 지도에서 위치 보기" 링크에 쓰일 검색어
 
 수정 후 GitHub repo에 다시 `data.js` 파일만 골라 덮어쓰기 업로드하면 반영돼요
@@ -78,9 +78,12 @@ CSV 컬럼: `day,item,category,amount,currency,krwRate,splitWith`
 
 ## 5. shared-core 원본
 
-이 레포의 `shared-core/`(popup.js, theme.js 등)가 **다른 모든 Bella Travel 레포(허브 포함)의 원본**입니다.
-다른 레포의 shared-core는 이 파일들의 복사본이며 자동 동기화되지 않으니, 여기서 수정한 뒤에는
-다른 레포에도 수동으로 동일하게 반영해야 합니다.
+`shared-core/`(popup.js, theme.js, attachments.js, backup.js, entry-source.js, sw-lifecycle.js, offline-tiles.js)의
+원본(정본)은 **`bella-travel` 레포의 `scaffold.html`**입니다. 이 레포의 `shared-core/`는 생성 시점 정본의
+스냅샷이며, 이후 정본이 바뀌어도 자동 반영되지 않습니다.
+
+정본이 갱신되면 이 레포에는 수동으로 반영해야 하며, 반대로 이 레포에서 먼저 수정했다면 다음 여행 생성 전에
+정본(scaffold.html)에도 동일하게 반영해야 합니다.
 
 ## 6. Bella Travel 아카이브 연동
 
