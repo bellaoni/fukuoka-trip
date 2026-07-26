@@ -25,7 +25,7 @@ const APP_SHELL = [
 // 그 결과가 평소 패닝으로 쌓인 타일에 밀려 지워지지 않도록 상한을 여유있게 잡음
 // (현재 여행 동선 기준 프리페치 시 약 70~80개 타일 소요 — app.js OFFLINE_TILE_* 참고).
 const TILE_CACHE = "fukuoka-trip-tiles-v1";
-const TILE_LIMIT = 700; // 타일 1개 약 10~15KB → 최대 약 7~10MB 수준
+const TILE_LIMIT = 2500; // 타일 1개 약 10~15KB → 최대 약 25~37MB 수준 (T02: 700→2500, app.js OFFLINE_TILE_MAX와 동일 값으로 통일)
 
 function isTileRequest(url) {
   return /^[abc]\.tile\.openstreetmap\.org$/.test(url.hostname);

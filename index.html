@@ -179,7 +179,7 @@
 
           <div id="geoCopySection" hidden>
             <div class="washi-divider"></div>
-            <p class="hint-text">지도에서 새로 자동 확인되거나 수동 입력한 좌표를 코드에 붙여넣을 수 있는 형태로 복사해요. 복사한 내용을 저에게 보내주시면 data.js의 GEO_COORDS에 반영해서 모든 기기에서 공유되게 할게요.</p>
+            <p class="hint-text">지도에서 새로 자동 확인되거나 수동 입력한 좌표를 코드에 그대로 붙여넣을 수 있는 형태로 복사해요. 복사한 내용은 이 여행의 data.js 파일과 함께 새 대화에서 Claude에게 보내며 "GEO_COORDS에 추가해줘"라고 요청하면 반영해줘요 — 받은 data.js를 GitHub 레포에 재업로드하면 모든 기기에서 공유돼요.</p>
             <div class="backup-actions">
               <button class="btn-ghost small" id="exportGeoBtn" type="button">지도 좌표 복사</button>
             </div>
@@ -369,6 +369,9 @@
 <script src="shared-core/popup.js"></script>
 <script src="shared-core/attachments.js"></script>
 <script src="shared-core/backup.js"></script>
+<script src="shared-core/entry-source.js"></script>
+<script src="shared-core/sw-lifecycle.js"></script>
+<script src="shared-core/offline-tiles.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

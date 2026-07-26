@@ -1,8 +1,7 @@
 // 엄마랑 후쿠오카 2박 3일 일정 데이터
-// tag: normal(노랑) | food(핑크) | shop(보라) | sight(초록)  (워시테이프 색상에 사용)
-// ※ theme(indigo) 태그: 사용 중단 결정. 신규 항목에는 사용하지 않는다.
-//   과거 공유 링크/로컬 저장값에 theme 값이 남아있을 수 있어 라벨·색상 매핑(app.js)과
-//   CSS(style.css .tag-theme)는 완전삭제하지 않고 우선 유지한다(1단계: 숨김. 2단계: 완전삭제는 별도 결정).
+// tag: normal(노랑) | food(핑크) | shop(보라) | sight(초록) | theme(인디고)  (워시테이프 색상에 사용)
+// ※ theme(indigo) 태그: 정식 지원 태그. 라벨·색상 매핑(app.js)과 CSS(style.css .tag-theme)에서
+//   계속 사용한다.
 
 // ---------------- 준비물 체크리스트: 카테고리 (단일 소스, B1) ----------------
 // index.html의 추가폼 select와 app.js의 CHECKLIST_VALID_CATS가 모두 여기서 파생됨.
@@ -87,7 +86,14 @@ const GEO_SEARCH_QUERY = {};
 
 const TRIP = {
   title: "엄마랑 후쿠오카 2박 3일",
-  hotel: "프린스 스마트인 하카타 (하카타역 도보 5분)",
+  hotel: {
+    name: "프린스 스마트인 하카타 (하카타역 도보 5분)",
+    checkin: "2026-08-02",
+    checkout: "2026-08-04"
+  },
+  // 개인 식별 정보(나의 이름): 하드코딩 대신 데이터 레이어(TRIP 객체)에서 관리(T03).
+  // classifyExpense/myShare(app.js)에서 splitWith 판별에 사용.
+  meName: "동녘하늘노을",
   // 일차 목록 (B3 1/6): index.html의 DAY 탭(#dayTabs)·지도 필터(#mapDayFilter)와
   // app.js의 mapMarkerLayers를 이 배열 기준으로 동적 생성하기 위한 단일 소스.
   // 이 단계에서는 필드만 추가하며, 아직 어떤 화면도 이 값을 참조하지 않는다(2~5단계에서 순차 연결).
@@ -339,9 +345,9 @@ const SHOPPING_LIST = [
 // 여기 값이 그대로 쓰인다.
 // splitWith: 나눠 낼 사람(들). 공동/개인 여부는 splitWith.length로 자동 판단함 (app.js 참고)
 //   - splitWith 인원이 2명 이상 → 공동경비 (금액을 인원수로 나눈 값이 내 몫)
-//   - splitWith 인원이 1명이고 그게 "나"(ME_NAME) → 개인경비 (전액 내 몫)
+//   - splitWith 인원이 1명이고 그게 "나"(TRIP.meName) → 개인경비 (전액 내 몫)
 //   - splitWith 인원이 1명인데 내가 아니면 → 내 가계부에서 제외 (타인 단독 경비)
-const ME_NAME = "동녘하늘노을";
+// (T03: 기존 별도 ME_NAME 상수는 TRIP.meName으로 이동)
 
 // 통화 기본값: 대부분의 지출이 KRW라 매 항목마다 currency/krwRate를 반복 입력하지 않도록
 // 기본값을 상수화하고 krw(...)로 감싼다. KRW가 아닌 항목만 currency/krwRate를 직접 명시한다.

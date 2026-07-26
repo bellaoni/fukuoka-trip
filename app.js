@@ -6,8 +6,7 @@
   // 허브 레포 이름을 바꾸면 이 값만 수정하면 됨.
   const ARCHIVE_URL = "/bella-travel/";
 
-  // theme: 사용 중단 결정(data.js 참고). 신규 항목에서 사용하지 않지만, 과거 공유 링크/로컬
-  // 저장값 호환을 위해 매핑은 유지(완전삭제 전 숨김 단계). 범례(renderMapLegend)는 실제 사용 중인
+  // theme: 정식 지원 태그(data.js 참고). 범례(renderMapLegend)는 실제 사용 중인
   // 태그만 자동으로 보여주므로 theme은 항목이 없는 한 자연히 노출되지 않는다.
   const TAG_LABEL = { normal: "일정", food: "맛집", shop: "쇼핑", sight: "관광", theme: "테마/체험" };
 
@@ -147,9 +146,9 @@
     let html = "";
 
     html += `<div class="book-card"><h3>🏨 숙소</h3>
-      <div class="book-row"><span class="k">숙소명</span><span class="v">${TRIP.hotel}</span></div>
-      <div class="book-row"><span class="k">체크인</span><span class="v">2026-08-02</span></div>
-      <div class="book-row"><span class="k">체크아웃</span><span class="v">2026-08-04</span></div>
+      <div class="book-row"><span class="k">숙소명</span><span class="v">${TRIP.hotel.name}</span></div>
+      <div class="book-row"><span class="k">체크인</span><span class="v">${TRIP.hotel.checkin}</span></div>
+      <div class="book-row"><span class="k">체크아웃</span><span class="v">${TRIP.hotel.checkout}</span></div>
     </div>`;
 
     TRIP.flights.forEach((f) => {
@@ -425,7 +424,7 @@
   function classifyExpense(e) {
     const n = e.splitWith.length;
     if (n > 1) return "shared";
-    if (n === 1 && e.splitWith[0] === ME_NAME) return "personal";
+    if (n === 1 && e.splitWith[0] === TRIP.meName) return "personal";
     return "excluded";
   }
   function myShare(e, type) {
@@ -675,7 +674,9 @@
       await DB.replaceExpenses(rows);
       currentExpenses = rows;
       renderExpenses();
-      showCsvStatus(`✅ ${rows.length}건으로 교체 완료 (${new Date().toLocaleString("ko-KR")})`);
+      const excludedCount = rows.filter(r => classifyExpense(r) === "excluded").length;
+      const excludedNote = excludedCount ? ` (제외 ${excludedCount}건)` : "";
+      showCsvStatus(`✅ ${rows.length}건으로 교체 완료${excludedNote} (${new Date().toLocaleString("ko-KR")})`);
       await updateExpenseUndoButton();
     } catch (err) {
       showCsvStatus(`⚠️ 가져오기 실패: ${err.message || "CSV 형식을 확인해 주세요."}`);
@@ -994,193 +995,16 @@
   }
 
 
-  // ---------------- 오프라인 지도 타일 미리 받기 (T6) ----------------
-  // 여행 동선(GEO_COORDS 확정 좌표 + 기기에 저장된 지오코딩 캐시) 반경 내 타일만,
-  // 사용자가 버튼을 누를 때 1회성으로 캐싱한다. 자동/대량 다운로드는 하지 않음
-  // (master.md 원칙10: OSM 타일 벌크다운로드 금지). 실제 캐시 저장/용량제한은 sw.js의
-  // 기존 cache-first 타일 캐시(TILE_CACHE)를 그대로 재사용 — 여기서는 fetch(tileUrl)만
-  // 호출하고, sw.js의 fetch 핸들러가 가로채 저장한다(중복 캐싱 로직 없음).
-  const OFFLINE_TILE_ZOOMS = [13, 14, 15, 16]; // 개요~도보 내비 수준
-  const OFFLINE_TILE_RADIUS_M = 500; // 각 지점 기준 반경(미터) — 여행 동선 근처만, 광역 다운로드 방지
-  const OFFLINE_TILE_FETCH_DELAY_MS = 300; // 순차 요청 간격 — 벌크 다운로드로 보이지 않게 속도 제한
-  const OFFLINE_TILE_MAX = 800; // 안전장치: 데이터가 늘어나도 이 개수를 넘으면 중단
-
-  function deg2tileXY(lat, lng, zoom) {
-    const latRad = (lat * Math.PI) / 180;
-    const n = 2 ** zoom;
-    const x = Math.floor(((lng + 180) / 360) * n);
-    const y = Math.floor(((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n);
-    return [x, y];
-  }
-
-  function tileKeysAroundPoint(lat, lng, zoom, radiusM) {
-    const dLat = radiusM / 111320;
-    const dLng = radiusM / (111320 * Math.cos((lat * Math.PI) / 180));
-    const [x1, y1] = deg2tileXY(lat - dLat, lng - dLng, zoom);
-    const [x2, y2] = deg2tileXY(lat + dLat, lng + dLng, zoom);
-    const keys = [];
-    for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
-      for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
-        keys.push(`${zoom}/${x}/${y}`);
-      }
-    }
-    return keys;
-  }
-
-  // GEO_COORDS(확정본) + 기기에 저장된 지오코딩 캐시(수동/자동 확정분, 실패기록 제외) 합산
-  async function collectTripPoints() {
-    const points = Object.values(GEO_COORDS);
-    const cached = await DB.getAllGeocodes();
-    Object.values(cached).forEach((rec) => {
-      if (rec && !rec.failed) points.push({ lat: rec.lat, lng: rec.lng });
-    });
-    return points;
-  }
-
-  const TILE_SUBDOMAINS = ["a", "b", "c"];
-  function tileUrlFromKey(key, subIdx) {
-    const [z, x, y] = key.split("/");
-    const s = TILE_SUBDOMAINS[subIdx % TILE_SUBDOMAINS.length];
-    return `https://${s}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
-  }
-
-  // 완료 상태를 기기에 남겨두어(로컬 저장), 화면을 재접속/재실행해도 "이미 받았는지"를
-  // 알 수 있게 한다. 여행지 좌표(GEO_COORDS+지오코딩 캐시)가 바뀌면 해시가 달라져
-  // 다시 받기가 필요한 상태로 자동 전환된다. 불필요한 재요청/중복 로컬 데이터 방지 목적.
-  const OFFLINE_TILE_STATE_KEY = "fukuokaTripOfflineTilesState_v1";
-
-  function hashTripPoints(points) {
-    return points
-      .map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`)
-      .sort()
-      .join("|");
-  }
-
-  function loadOfflineTileState() {
-    try {
-      return JSON.parse(localStorage.getItem(OFFLINE_TILE_STATE_KEY)) || null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function saveOfflineTileState(state) {
-    try {
-      localStorage.setItem(OFFLINE_TILE_STATE_KEY, JSON.stringify(state));
-    } catch (e) {}
-  }
-
-  // 저장된 상태와 현재 여행지 좌표가 일치하면 기본 버튼을 숨기고 "다시 받기"만 노출한다.
-  // 반환값: 현재 상태가 최신(이미 다 받아둠)인지 여부
-  function applyOfflineMapButtonState(hash) {
-    const btn = document.getElementById("offlineMapBtn");
-    const redoBtn = document.getElementById("offlineMapRedoBtn");
-    if (!btn || !redoBtn) return false;
-    const saved = loadOfflineTileState();
-    const isUpToDate = !!saved && saved.pointsHash === hash;
-    btn.hidden = isUpToDate;
-    redoBtn.hidden = !isUpToDate;
-    return isUpToDate;
-  }
-
-  let offlinePrefetchRunning = false;
-  let offlinePrefetchCancelled = false;
-
-  async function startOfflineTilePrefetch() {
-    if (offlinePrefetchRunning) return;
-    const btn = document.getElementById("offlineMapBtn");
-    const redoBtn = document.getElementById("offlineMapRedoBtn");
-    const cancelBtn = document.getElementById("offlineMapCancelBtn");
-    const statusEl = document.getElementById("offlineMapStatus");
-    if (!btn || !statusEl) return;
-
-    const points = await collectTripPoints();
-    const hash = hashTripPoints(points);
-    const keySet = new Set();
-    points.forEach((p) => {
-      OFFLINE_TILE_ZOOMS.forEach((z) => {
-        tileKeysAroundPoint(p.lat, p.lng, z, OFFLINE_TILE_RADIUS_M).forEach((k) => keySet.add(k));
-      });
-    });
-    const keys = [...keySet];
-
-    if (!keys.length) {
-      statusEl.textContent = "받을 지도 범위를 찾지 못했어요.";
-      statusEl.hidden = false;
-      return;
-    }
-    if (keys.length > OFFLINE_TILE_MAX) {
-      statusEl.textContent = `범위가 너무 넓어요(${keys.length}개). 벌크 다운로드 방지를 위해 중단했어요.`;
-      statusEl.hidden = false;
-      return;
-    }
-
-    offlinePrefetchRunning = true;
-    offlinePrefetchCancelled = false;
-    btn.disabled = true;
-    if (redoBtn) redoBtn.hidden = true;
-    cancelBtn.hidden = false;
-    statusEl.hidden = false;
-    let done = 0;
-    let failed = 0;
-
-    for (let i = 0; i < keys.length; i++) {
-      if (offlinePrefetchCancelled) break;
-      statusEl.textContent = `타일 받는 중... (${done}/${keys.length})`;
-      try {
-        await fetch(tileUrlFromKey(keys[i], i));
-      } catch (e) {
-        failed++;
-      }
-      done++;
-      if (i < keys.length - 1) {
-        await new Promise((r) => setTimeout(r, OFFLINE_TILE_FETCH_DELAY_MS));
-      }
-    }
-
-    offlinePrefetchRunning = false;
-    btn.disabled = false;
-    cancelBtn.hidden = true;
-    if (offlinePrefetchCancelled) {
-      statusEl.textContent = `취소했어요. (${done}/${keys.length}개 받음)`;
-      applyOfflineMapButtonState(hash);
-    } else if (failed) {
-      statusEl.textContent = `⚠️ 완료 (${done - failed}/${keys.length}개, ${failed}개 실패 — 네트워크 상태를 확인해 주세요. 실패한 타일이 있어 다음에 다시 받아야 할 수 있어요)`;
-      applyOfflineMapButtonState(hash);
-    } else {
-      saveOfflineTileState({ pointsHash: hash, tileCount: keys.length, savedAt: Date.now() });
-      applyOfflineMapButtonState(hash);
-      statusEl.textContent = `✅ 오프라인 지도 준비 완료 (${keys.length}개 타일) — 이미 저장돼 있어서, 이 화면을 다시 열거나 온라인으로 돌아와도 버튼을 다시 누를 필요 없어요.`;
-    }
-  }
-
-  document.getElementById("offlineMapBtn")?.addEventListener("click", startOfflineTilePrefetch);
-  document.getElementById("offlineMapRedoBtn")?.addEventListener("click", startOfflineTilePrefetch);
-  document.getElementById("offlineMapCancelBtn")?.addEventListener("click", () => {
-    offlinePrefetchCancelled = true;
+  // ---------------- 오프라인 지도 타일 미리 받기 (shared-core/offline-tiles.js로 이식, T02 반영값 그대로 전달) ----------------
+  SharedCore.offlineTiles.initOfflineTiles({
+    geoCoords: GEO_COORDS,
+    getAllGeocodes: () => DB.getAllGeocodes(),
+    storageKey: "fukuokaTripOfflineTilesState_v1",
+    zooms: [13, 14, 15, 16],
+    radiusM: 750,
+    fetchDelayMs: 300,
+    maxTiles: 2500,
   });
-
-  // 화면 진입 시 기존 저장 상태를 확인해, 이미 받아둔 상태면 기본 버튼을 숨기고
-  // "다시 받기"+상태 문구로 안내한다(재연결 후 안내문구가 사라져 다시 눌러야 하는지
-  // 헷갈리는 문제 방지). 여행지 좌표가 바뀐 경우에만 기본 버튼이 다시 나타난다.
-  (async function initOfflineMapUI() {
-    const btn = document.getElementById("offlineMapBtn");
-    const redoBtn = document.getElementById("offlineMapRedoBtn");
-    const statusEl = document.getElementById("offlineMapStatus");
-    if (!btn || !redoBtn || !statusEl) return;
-    const points = await collectTripPoints();
-    const hash = hashTripPoints(points);
-    const saved = loadOfflineTileState();
-    const isUpToDate = applyOfflineMapButtonState(hash);
-    if (isUpToDate && saved) {
-      const dateStr = new Date(saved.savedAt).toLocaleDateString("ko-KR");
-      statusEl.hidden = false;
-      statusEl.textContent = `✅ 오프라인 지도 저장됨 (${dateStr} 기준, 타일 ${saved.tileCount}개). 새 장소가 추가되면 다시 받기가 나타나요.`;
-    } else if (saved && !isUpToDate) {
-      statusEl.hidden = false;
-      statusEl.textContent = "여행지 정보가 바뀌어서 오프라인 지도를 다시 받아야 해요.";
-    }
-  })();
 
   // ---------------- 상세 모달 ----------------
   async function openModal(id) {
@@ -1379,44 +1203,23 @@
     statusEl.hidden = false;
   });
 
-  // ---------------- 진입 경로 확인 (Bella Travel 아카이브 연동) ----------------
-  // 아카이브 카드 클릭 시 ?source=archive 로 진입 → 세션 동안 "홈(← Bella Travel)" 버튼 표시.
-  // 동행자에게 공유하는 링크(파라미터 없음)로 직접 접속하면 버튼이 보이지 않는다.
-  // sessionStorage는 path가 아닌 origin(도메인) 단위로 공유되므로, fukuoka-trip과 bella-travel이
-  // 서로 다른 레포(다른 project page)라도 같은 username.github.io 도메인이면 정상 동작한다.
-  const ENTRY_KEY = "bella-entry-source";
-  (function initEntrySource() {
-    const params = new URLSearchParams(location.search);
-    const source = params.get("source");
-    if (source) {
-      try { sessionStorage.setItem(ENTRY_KEY, source); } catch (e) {}
-      // 주소창에서 파라미터를 지워 링크가 지저분해 보이지 않게 함 (세션 플래그로 상태 유지)
-      params.delete("source");
-      const cleanUrl = location.pathname + (params.toString() ? `?${params}` : "") + location.hash;
-      history.replaceState(null, "", cleanUrl);
+  // ---------------- 진입 경로 확인 (Bella Travel 아카이브 연동, shared-core/entry-source.js로 이식) ----------------
+  isArchiveEntry = SharedCore.entrySource.initEntrySource({ archiveUrl: ARCHIVE_URL });
+  if (isArchiveEntry) {
+    // 가계부는 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
+    const expenseAccordion = document.getElementById("expenseAccordion");
+    if (expenseAccordion) {
+      expenseAccordion.hidden = false;
+      loadExpenses().then(renderExpenses);
     }
-    let entrySource = null;
-    try { entrySource = sessionStorage.getItem(ENTRY_KEY); } catch (e) {}
-    isArchiveEntry = entrySource === "archive";
-    const homeBtn = document.getElementById("homeBtn");
-    if (isArchiveEntry) {
-      homeBtn.hidden = false;
-      homeBtn.addEventListener("click", () => { location.href = ARCHIVE_URL; });
-      // 가계부는 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
-      const expenseAccordion = document.getElementById("expenseAccordion");
-      if (expenseAccordion) {
-        expenseAccordion.hidden = false;
-        loadExpenses().then(renderExpenses);
-      }
-      // 지도 좌표 복사도 나만 보기 전용 - 공유자에게는 의미 없는 개발용 기능
-      const geoCopySection = document.getElementById("geoCopySection");
-      if (geoCopySection) geoCopySection.hidden = false;
-      // 가계부 CSV 업데이트도 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
-      const expenseCsvSection = document.getElementById("expenseCsvSection");
-      if (expenseCsvSection) expenseCsvSection.hidden = false;
-      updateExpenseUndoButton(); // D1: 이전에 저장된 스냅샷이 있으면 되돌리기 버튼을 보여줌
-    }
-  })();
+    // 지도 좌표 복사도 나만 보기 전용 - 공유자에게는 의미 없는 개발용 기능
+    const geoCopySection = document.getElementById("geoCopySection");
+    if (geoCopySection) geoCopySection.hidden = false;
+    // 가계부 CSV 업데이트도 나만 보기 전용 - Bella Travel을 거쳐 들어왔을 때만 노출
+    const expenseCsvSection = document.getElementById("expenseCsvSection");
+    if (expenseCsvSection) expenseCsvSection.hidden = false;
+    updateExpenseUndoButton(); // D1: 이전에 저장된 스냅샷이 있으면 되돌리기 버튼을 보여줌
+  }
 
   // ---------------- 팝업 닫기 일괄 바인딩 ----------------
   bindCardClose("modal", () => { currentItem = null; });
@@ -1451,23 +1254,6 @@
   // ---------------- 초기화 ----------------
   renderDayTabs();
   renderTimeline();
-
-  // ---------------- 서비스워커 업데이트 알림 ----------------
-  // 새 버전의 sw.js가 설치되어 "대기 중" 상태가 되면 하단에 토스트로 알리고,
-  // 사용자가 탭하면 그때만 새 버전을 활성화 + 새로고침한다 (임의로 화면이 바뀌지 않게).
-  function showUpdateToast(reg) {
-    let toast = document.getElementById("swUpdateToast");
-    if (toast) { toast.hidden = false; return; }
-    toast = document.createElement("div");
-    toast.id = "swUpdateToast";
-    toast.className = "sw-update-toast";
-    toast.innerHTML = `<span>새 버전이 있어요</span><button type="button" id="swUpdateBtn">새로고침</button>`;
-    document.body.appendChild(toast);
-    toast.querySelector("#swUpdateBtn").addEventListener("click", () => {
-      if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
-      toast.hidden = true;
-    });
-  }
 
   // ---------------- 안드로이드 "앱 설치" 배너 ----------------
   // 안드로이드 크롬은 PWA 설치 조건을 만족하면 beforeinstallprompt 이벤트를 쏘는데,
@@ -1516,28 +1302,6 @@
     if (banner) banner.hidden = true;
   });
 
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").then((reg) => {
-        if (reg.waiting && navigator.serviceWorker.controller) showUpdateToast(reg);
-        reg.addEventListener("updatefound", () => {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener("statechange", () => {
-            // controller가 이미 있다는 건 "새로 설치"가 아니라 "업데이트"라는 뜻
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              showUpdateToast(reg);
-            }
-          });
-        });
-      }).catch(() => {});
-
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (refreshing) return;
-        refreshing = true;
-        location.reload();
-      });
-    });
-  }
+  // ---------------- 서비스워커 등록 / 업데이트 알림 (shared-core/sw-lifecycle.js로 이식) ----------------
+  SharedCore.swLifecycle.initServiceWorker();
 })();

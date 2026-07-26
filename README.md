@@ -76,7 +76,13 @@ CSV 컬럼: `day,item,category,amount,currency,krwRate,splitWith`
 한 번이라도 CSV로 올리면 이후로는 그 내용이 기준이 되고, "데이터 백업 → 내보내기"에도 가계부 금액이
 사진·메모·체크리스트와 함께 포함돼요. 백업 파일을 "가져오기" 하면 가계부도 함께 복원됩니다.
 
-## 5. Bella Travel 아카이브 연동
+## 5. shared-core 원본
+
+이 레포의 `shared-core/`(popup.js, theme.js 등)가 **다른 모든 Bella Travel 레포(허브 포함)의 원본**입니다.
+다른 레포의 shared-core는 이 파일들의 복사본이며 자동 동기화되지 않으니, 여기서 수정한 뒤에는
+다른 레포에도 수동으로 동일하게 반영해야 합니다.
+
+## 6. Bella Travel 아카이브 연동
 
 이 저장소는 **독립 레포로 그대로 유지**됩니다 (`fukuoka-trip`). 별도의 `bella-travel` 레포가
 허브 역할을 하며, 거기서 이 앱으로 들어올 때만 헤더에 홈(←) 버튼이 나타나도록 되어 있어요.
