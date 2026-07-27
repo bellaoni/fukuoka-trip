@@ -897,6 +897,8 @@
     document.querySelectorAll("#mapDayFilter .day-tab").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.mapday === day);
     });
+    // "전체" 탭에서는 날짜별 순번이 뒤섞여 보이므로, 특정 DAY를 선택했을 때만 숫자를 노출한다.
+    leafletMap.getContainer().classList.toggle("day-selected", day !== "all");
     TRIP.days.map((d) => d.day).forEach((d) => {
       const layer = mapMarkerLayers[d];
       const show = day === "all" || String(d) === day;

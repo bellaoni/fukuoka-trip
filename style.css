@@ -304,14 +304,19 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
   transition: transform .18s ease;
 }
-/* 일정 순서 번호(T13): 핀 자체는 -45deg 회전돼 있으므로 숫자만 반대로 돌려 똑바로 보이게 한다 */
+/* 일정 순서 번호(T13): 핀 자체는 -45deg 회전돼 있으므로 숫자만 반대로 돌려 똑바로 보이게 한다.
+   "전체" 탭에서는 여러 날짜 번호가 뒤섞여 보이므로, DAY를 선택했을 때(.day-selected)만 노출한다. */
 .map-pin-num {
+  display: none;
   transform: rotate(45deg);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.leaflet-container.day-selected .map-pin-num {
+  display: block;
 }
 /* 마커 선택 시 확대(T12): 상세 시트가 열려있는 동안 선택된 마커만 살짝 커진다 */
 .map-pin-wrap.selected .map-pin {
