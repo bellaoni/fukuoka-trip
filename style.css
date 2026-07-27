@@ -293,7 +293,9 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 /* 마커 가시성 개선(T11): 원형 점 → 핀(물방울) 모양, 크기 확대(14px→26px), 흰 테두리로 대비 강화 */
 .map-pin-wrap { background: transparent; border: none; }
 .map-pin {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 26px;
   height: 26px;
   border-radius: 50% 50% 50% 0;
@@ -301,6 +303,15 @@ main { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
   border: 3px solid var(--paper-raised);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
   transition: transform .18s ease;
+}
+/* 일정 순서 번호(T13): 핀 자체는 -45deg 회전돼 있으므로 숫자만 반대로 돌려 똑바로 보이게 한다 */
+.map-pin-num {
+  transform: rotate(45deg);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 /* 마커 선택 시 확대(T12): 상세 시트가 열려있는 동안 선택된 마커만 살짝 커진다 */
 .map-pin-wrap.selected .map-pin {

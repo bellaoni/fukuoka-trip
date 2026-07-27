@@ -699,18 +699,34 @@
 
   // 마커 가시성 개선(T11): 작은 원형 점 대신 눈에 잘 띄는 핀(물방울) 모양으로 변경.
   // 좌표 기준점이 핀 끝(뾰족한 부분)으로 바뀌므로 iconAnchor/popupAnchor도 함께 조정했다.
-  function makePinIcon(tag) {
+  function makePinIcon(tag, orderNum) {
+    const numHtml = orderNum ? `<span class="map-pin-num">${orderNum}</span>` : "";
     return L.divIcon({
       className: "map-pin-wrap",
-      html: `<span class="map-pin" style="background:${tagColorVar(tag)}"></span>`,
+      html: `<span class="map-pin" style="background:${tagColorVar(tag)}">${numHtml}</span>`,
       iconSize: [26, 26],
       iconAnchor: [13, 26],
       popupAnchor: [0, -26]
     });
   }
 
+  // 일정 순서 번호(T13): 각 날짜별로 mapQuery가 있고 noPin이 아닌 일정에 1부터 순서를 매긴다.
+  // ITEMS 배열이 이미 시간순(입력 순서)이므로 day별로 순회하며 카운트만 하면 된다.
+  let itemOrderMap = new Map(); // itemId -> 그 날짜 안에서의 순번(1부터)
+  function computeItemOrderNumbers() {
+    itemOrderMap = new Map();
+    TRIP.days.forEach((d) => {
+      let n = 0;
+      ITEMS.filter((i) => i.day === d.day && i.mapQuery && !i.noPin).forEach((i) => {
+        n += 1;
+        itemOrderMap.set(i.id, n);
+      });
+    });
+  }
+
   function addMarkerForItem(item, coords) {
-    const marker = L.marker([coords.lat, coords.lng], { icon: makePinIcon(item.tag) });
+    const orderNum = itemOrderMap.get(item.id);
+    const marker = L.marker([coords.lat, coords.lng], { icon: makePinIcon(item.tag, orderNum) });
     marker.on("click", () => {
       if (pickingItem) {
         // 위치찍기 모드 중 이미 있는 마커를 탭하면, 그 위치로 현재 찍는 중인 핀을 옮긴다
@@ -971,6 +987,7 @@
   async function renderMap() {
     ensureLeafletMap();
     leafletMap.invalidateSize();
+    computeItemOrderNumbers();
 
     const withQuery = ITEMS.filter((i) => i.mapQuery && !i.noPin);
     const byQuery = new Map();
